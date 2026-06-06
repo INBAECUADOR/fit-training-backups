@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import { getDiet, saveDiet } from '../api'
+import { Save } from 'lucide-react'
 
 const mealTimes = [
   { key: 'breakfast', label: 'Desayuno' },
@@ -14,10 +16,11 @@ const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', '
 export default function Diet() {
   const [selectedDay, setSelectedDay] = React.useState('Lunes')
   const [meals, setMeals] = React.useState({})
+  const [saving, setSaving] = React.useState(false)
+  const [saved, setSaved] = React.useState(false)
 
-  React.useEffect(() => {
-    const stored = localStorage.getItem('diet_plan')
-    if (stored) setMeals(JSON.parse(stored))
+  useEffect(() => {
+    getDiet().then(setMeals).catch(() => {})
   }, [])
 
   const updateMeal = (day, mealKey, value) => {
@@ -25,7 +28,17 @@ export default function Diet() {
     if (!updated[day]) updated[day] = {}
     updated[day][mealKey] = value
     setMeals(updated)
-    localStorage.setItem('diet_plan', JSON.stringify(updated))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await saveDiet(meals)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {} finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -37,6 +50,18 @@ export default function Diet() {
             <h1 className="text-3xl font-extrabold text-white">Plan de Alimentación</h1>
             <p className="text-gray-400 text-sm mt-1">Gestioná tus comidas del día</p>
           </div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition shadow-lg ${
+              saved
+                ? 'bg-emerald-500 text-white'
+                : 'bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 hover:from-emerald-400 hover:to-green-500'
+            }`}
+          >
+            <Save size={16} />
+            {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar'}
+          </button>
         </div>
 
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">

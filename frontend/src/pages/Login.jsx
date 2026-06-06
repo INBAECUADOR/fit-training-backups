@@ -3,23 +3,26 @@ import { useNavigate } from 'react-router-dom'
 import { login } from '../api'
 
 export default function Login() {
-  const [doc, setDoc] = useState('')
+  const [credential, setCredential] = useState('')
   const [pass, setPass] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  const isEmail = credential.includes('@')
 
   const handleSubmit = async e => {
     e.preventDefault()
     setLoading(true)
     setError('')
     try {
-      const data = await login(doc, pass)
+      const payload = isEmail ? { email: credential, password: pass } : { document_id: credential, password: pass }
+      const data = await login(payload)
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
       navigate('/')
     } catch {
-      setError('Documento o contraseña incorrectos')
+      setError('Email/documento o contraseña incorrectos')
     } finally {
       setLoading(false)
     }
@@ -39,13 +42,13 @@ export default function Login() {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Documento</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Email o Documento</label>
             <input
               type="text"
-              value={doc}
-              onChange={e => setDoc(e.target.value)}
+              value={credential}
+              onChange={e => setCredential(e.target.value)}
               className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 transition"
-              placeholder="Ingresá tu documento"
+              placeholder="Ingresá tu email o documento"
               required
             />
           </div>

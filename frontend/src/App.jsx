@@ -6,6 +6,8 @@ import Routine from './pages/Routine'
 import Diet from './pages/Diet'
 import Evolution from './pages/Evolution'
 import PRBoard from './pages/PRBoard'
+import CalorieCalculator from './pages/CalorieCalculator'
+import Admin from './pages/Admin'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
@@ -22,6 +24,8 @@ export default function App() {
         <Route path="/diet" element={<PrivateRoute><Diet /></PrivateRoute>} />
         <Route path="/evolution" element={<PrivateRoute><Evolution /></PrivateRoute>} />
         <Route path="/pr-board" element={<PrivateRoute><PRBoard /></PrivateRoute>} />
+        <Route path="/calories" element={<PrivateRoute><CalorieCalculator /></PrivateRoute>} />
+        <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>

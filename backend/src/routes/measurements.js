@@ -4,13 +4,25 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
+async function targetUser(req) {
+  if (req.query.user_id) {
+    const uid = parseInt(req.query.user_id);
+    const db = await getDb();
+    const result = db.exec(`SELECT role FROM users WHERE id = ?`, [req.userId]);
+    const role = result.length > 0 ? result[0].values[0][0] : 'user';
+    if (role === 'admin') return uid;
+  }
+  return req.userId;
+}
+
 router.get('/', authenticate, async (req, res) => {
   try {
     const db = await getDb();
+    const uid = await targetUser(req);
     const result = db.exec(`
       SELECT id, weight, chest, waist, arms, legs, notes, created_at
       FROM measurements WHERE user_id = ? ORDER BY created_at DESC
-    `, [req.userId]);
+    `, [uid]);
     const measurements = result.length > 0 ? result[0].values.map(row => ({
       id: row[0], weight: row[1], chest: row[2], waist: row[3],
       arms: row[4], legs: row[5], notes: row[6], date: row[7]
@@ -25,8 +37,9 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const { weight, chest, waist, arms, legs, notes } = req.body;
     const db = await getDb();
+    const uid = await targetUser(req);
     db.run(`INSERT INTO measurements (user_id, weight, chest, waist, arms, legs, notes) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [req.userId, weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '']);
+      [uid, weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '']);
     saveDb();
     res.json({ message: 'Medidas guardadas' });
   } catch (err) {
@@ -37,10 +50,11 @@ router.post('/', authenticate, async (req, res) => {
 router.get('/weight', authenticate, async (req, res) => {
   try {
     const db = await getDb();
+    const uid = await targetUser(req);
     const result = db.exec(`
       SELECT weight, created_at FROM measurements
       WHERE user_id = ? AND weight > 0 ORDER BY created_at DESC LIMIT 30
-    `, [req.userId]);
+    `, [uid]);
     const weights = result.length > 0
       ? result[0].values.map(row => ({ weight: row[0], date: row[1] })) : [];
     res.json(weights);
@@ -54,8 +68,9 @@ router.post('/weight', authenticate, async (req, res) => {
     const { weight } = req.body;
     if (!weight) return res.status(400).json({ error: 'Peso requerido' });
     const db = await getDb();
+    const uid = await targetUser(req);
     db.run(`INSERT INTO measurements (user_id, weight) VALUES (?, ?)`,
-      [req.userId, parseFloat(weight) || 0]);
+      [uid, parseFloat(weight) || 0]);
     saveDb();
     res.json({ message: 'Peso guardado' });
   } catch (err) {

@@ -7,26 +7,38 @@ const router = express.Router();
 
 router.post('/login', async (req, res) => {
   try {
-    const { document_id, password } = req.body;
-    if (!document_id || !password) {
-      return res.status(400).json({ error: 'Documento y contraseña requeridos' });
+    const { document_id, password, email } = req.body;
+    const credential = email || document_id;
+    if (!credential || !password) {
+      return res.status(400).json({ error: 'Email/documento y contraseña requeridos' });
     }
     const db = await getDb();
-    const result = db.exec(`SELECT id, name, document_id, password FROM users WHERE document_id = ?`, [document_id]);
-    if (result.length === 0 || result[0].values.length === 0) {
-      return res.status(401).json({ error: 'Documento o contraseña incorrectos' });
+
+    let userRow = null;
+    if (credential.includes('@')) {
+      const result = db.exec(`SELECT id, name, document_id, email, password, role FROM users WHERE email = ?`, [credential]);
+      if (result.length > 0 && result[0].values.length > 0) userRow = result[0].values[0];
     }
-    const row = result[0].values[0];
-    const user = { id: row[0], name: row[1], document_id: row[2], password: row[3] };
+    if (!userRow) {
+      const result = db.exec(`SELECT id, name, document_id, email, password, role FROM users WHERE document_id = ?`, [credential]);
+      if (result.length > 0 && result[0].values.length > 0) userRow = result[0].values[0];
+    }
+
+    if (!userRow) {
+      return res.status(401).json({ error: 'Email/documento o contraseña incorrectos' });
+    }
+
+    const user = { id: userRow[0], name: userRow[1], document_id: userRow[2], email: userRow[3], password: userRow[4], role: userRow[5] };
 
     const valid = bcrypt.compareSync(password, user.password);
     if (!valid) {
-      return res.status(401).json({ error: 'Documento o contraseña incorrectos' });
+      return res.status(401).json({ error: 'Email/documento o contraseña incorrectos' });
     }
 
     const token = generateToken(user.id);
-    res.json({ token, user: { id: user.id, name: user.name, document_id: user.document_id } });
+    res.json({ token, user: { id: user.id, name: user.name, document_id: user.document_id, email: user.email, role: user.role } });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

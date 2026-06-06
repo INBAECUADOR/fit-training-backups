@@ -21,8 +21,8 @@ api.interceptors.response.use(
   }
 )
 
-export const login = (document_id, password) =>
-  api.post('/auth/login', { document_id, password }).then(r => r.data)
+export const login = (data) =>
+  api.post('/auth/login', data).then(r => r.data)
 
 export const getRoutines = () =>
   api.get('/routines').then(r => r.data)
@@ -36,11 +36,11 @@ export const saveResult = (data) =>
 export const getResults = (exerciseId) =>
   api.get(`/routines/results/${exerciseId}`).then(r => r.data)
 
-export const getMeasurements = () =>
-  api.get('/measurements').then(r => r.data)
+export const getMeasurements = (params) =>
+  api.get('/measurements', { params }).then(r => r.data)
 
-export const saveMeasurement = (data) =>
-  api.post('/measurements', data).then(r => r.data)
+export const saveMeasurement = (data, params) =>
+  api.post('/measurements', data, { params }).then(r => r.data)
 
 export const getWeightHistory = () =>
   api.get('/measurements/weight').then(r => r.data)
@@ -56,6 +56,63 @@ export const getPRs = () =>
 
 export const getSuggestion = (exerciseId) =>
   api.get(`/routines/suggest/${exerciseId}`).then(r => r.data)
+
+export const getDiet = (params) =>
+  api.get('/diet', { params }).then(r => r.data)
+
+export const saveDiet = (meals, params) =>
+  api.put('/diet', meals, { params }).then(r => r.data)
+
+export const analyzeFoodImage = (file) => {
+  const formData = new FormData()
+  formData.append('image', file)
+  return api.post('/calories/analyze', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000,
+  }).then(r => r.data)
+}
+
+export const adminGetExercises = (params) =>
+  api.get('/admin/exercises', { params }).then(r => r.data)
+
+export const adminCreateExercise = (data) =>
+  api.post('/admin/exercises', data).then(r => r.data)
+
+export const adminUpdateExercise = (id, data) =>
+  api.put(`/admin/exercises/${id}`, data).then(r => r.data)
+
+export const adminDeleteExercise = (id) =>
+  api.delete(`/admin/exercises/${id}`).then(r => r.data)
+
+export const adminGetRoutines = (params) =>
+  api.get('/admin/routines', { params }).then(r => r.data)
+
+export const adminUpdateRoutine = (id, data) =>
+  api.put(`/admin/routines/${id}`, data).then(r => r.data)
+
+export const adminGetUsers = () =>
+  api.get('/admin/users').then(r => r.data)
+
+export const adminCreateUser = (data) =>
+  api.post('/admin/users', data).then(r => r.data)
+
+export const adminUpdateUser = (id, data) =>
+  api.put(`/admin/users/${id}`, data).then(r => r.data)
+
+export const adminDeleteUser = (id) =>
+  api.delete(`/admin/users/${id}`).then(r => r.data)
+
+export const adminGetGlobalExercises = (params) =>
+  api.get('/admin/global-exercises', { params }).then(r => r.data)
+
+export const adminCreateGlobalExercise = (data) =>
+  api.post('/admin/global-exercises', data).then(r => r.data)
+
+export const adminUpdateGlobalExercise = (id, data) =>
+  api.put(`/admin/global-exercises/${id}`, data).then(r => r.data)
+
+export const adminDeleteGlobalExercise = (id) =>
+  api.delete(`/admin/global-exercises/${id}`).then(r => r.data)
 
 export const downloadExport = (type) => {
   const token = localStorage.getItem('token')
