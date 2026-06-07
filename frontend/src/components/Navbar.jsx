@@ -34,27 +34,27 @@ export default function Navbar() {
           <span className="font-extrabold text-white text-lg hidden sm:block">EnriquezMania</span>
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
           {links.map(link => (
             <button
               key={link.to}
               onClick={() => navigate(link.to)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition ${
+              className={`flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-sm font-semibold transition whitespace-nowrap ${
                 location.pathname === link.to
                   ? 'bg-gym-700 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gym-700/50'
               }`}
             >
-              <link.icon size={16} />
-              <span className="hidden sm:inline">{link.label}</span>
+              <link.icon size={18} className="sm:size-[16]" />
+              <span>{link.label}</span>
             </button>
           ))}
           <button
             onClick={handleLogout}
-            className="ml-2 p-2 text-gray-400 hover:text-gym-400 transition"
+            className="ml-1 sm:ml-2 p-2 text-gray-400 hover:text-gym-400 transition shrink-0"
             title="Cerrar sesión"
           >
-            <LogOut size={18} />
+            <LogOut size={20} />
           </button>
         </div>
       </div>

@@ -40,12 +40,23 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gym-900">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-white">¡Bienvenido de vuelta, {firstName}!</h1>
-          <p className="text-gray-400 mt-1">
-            Hoy es <span className="text-gym-300 font-semibold">{data.todayName}</span>
-            {data.isWeekend && <span className="text-gray-500 ml-2">— día de descanso activo</span>}
-          </p>
+        {/* Profile header */}
+        <div className="flex items-center gap-4 mb-8 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5">
+          <img
+            src="https://enriquezmania.com/wp-content/uploads/2024/08/WhatsApp-Image-2024-08-09-at-12.20.13-PM.jpeg"
+            alt="Ing. Jose Luis Enriquez"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-gym-500 shadow-xl shrink-0"
+          />
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white truncate">¡Bienvenido, {firstName}!</h1>
+            <p className="text-gray-400 text-sm mt-0.5">
+              Hoy es <span className="text-gym-300 font-semibold">{data.todayName}</span>
+              {data.isWeekend && <span className="text-gray-500 ml-2">— día de descanso</span>}
+            </p>
+            <p className="text-[10px] sm:text-xs text-gym-400/70 mt-1 font-medium tracking-wide">
+              Plataforma hecha por Ing. Jose Luis Enriquez
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -160,6 +171,18 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Footer signature */}
+        <div className="mt-12 pt-6 border-t border-gym-800 text-center">
+          <img
+            src="https://enriquezmania.com/wp-content/uploads/2024/08/logo.png"
+            alt="EnriquezMania"
+            className="h-8 mx-auto mb-2 opacity-50"
+          />
+          <p className="text-xs text-gym-400/50 font-medium tracking-wide">
+            Plataforma hecha por Ing. Jose Luis Enriquez
+          </p>
+        </div>
       </div>
     </div>
   )

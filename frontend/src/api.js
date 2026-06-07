@@ -63,6 +63,15 @@ export const getDiet = (params) =>
 export const saveDiet = (meals, params) =>
   api.put('/diet', meals, { params }).then(r => r.data)
 
+export const searchFoods = (q) =>
+  api.get(`/calories/foods/search?q=${encodeURIComponent(q)}`).then(r => r.data)
+
+export const getFoodCategories = () =>
+  api.get('/calories/foods/categories').then(r => r.data)
+
+export const calculateCalories = (items) =>
+  api.post('/calories/manual', { items }).then(r => r.data)
+
 export const analyzeFoodImage = (file) => {
   const formData = new FormData()
   formData.append('image', file)

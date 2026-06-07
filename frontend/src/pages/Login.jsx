@@ -32,13 +32,23 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gym-900 via-gym-800 to-gym-700 p-4">
       <div className="bg-gym-800/80 backdrop-blur border border-gym-700/50 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <div className="flex flex-col items-center mb-8">
-          <img
-            src="https://enriquezmania.com/wp-content/uploads/2024/08/logo.png"
-            alt="EnriquezMania"
-            className="h-24 w-auto mb-4"
-          />
+          <div className="relative mb-4">
+            <img
+              src="https://enriquezmania.com/wp-content/uploads/2024/08/WhatsApp-Image-2024-08-09-at-12.20.13-PM.jpeg"
+              alt="Ing. Jose Luis Enriquez"
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-gym-500 shadow-xl"
+            />
+            <img
+              src="https://enriquezmania.com/wp-content/uploads/2024/08/logo.png"
+              alt="EnriquezMania"
+              className="h-8 w-auto absolute -bottom-2 -right-2 drop-shadow-lg"
+            />
+          </div>
           <h1 className="text-3xl font-extrabold text-white">EnriquezMania</h1>
           <p className="text-gray-400 mt-1">Entrena. Progresá. Superate.</p>
+          <p className="text-[10px] text-gym-400/60 mt-2 font-medium tracking-wide">
+            Plataforma hecha por Ing. Jose Luis Enriquez
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

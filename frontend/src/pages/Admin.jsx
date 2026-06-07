@@ -316,7 +316,12 @@ export default function Admin() {
 
             <div className="space-y-2 mb-6">
               {filtered.map(ex => (
-                <div key={ex.id} className="bg-gym-800/50 border border-gym-700/30 rounded-xl px-4 py-3 flex items-center justify-between hover:bg-gym-800/70 transition">
+                <div key={ex.id} className="bg-gym-800/50 border border-gym-700/30 rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-gym-800/70 transition">
+                  {ex.gif_url && (
+                    <img src={`https://adminweb.blob.core.windows.net/gym1/${ex.gif_url}.gif`}
+                      alt={ex.name} className="w-12 h-12 rounded-lg object-cover bg-gym-900 shrink-0"
+                      onError={e => { e.target.style.display = 'none' }} />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white">{ex.name}</p>
                     <p className="text-xs text-gray-500">{ex.series} series x {ex.reps} reps {ex.observation ? `· ${ex.observation}` : ''}</p>
@@ -402,9 +407,16 @@ export default function Admin() {
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-400 mb-1">GIF URL (UUID)</label>
-                    <input value={form.gif_url} onChange={e => setForm({ ...form, gif_url: e.target.value })}
-                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400"
-                      placeholder="ej: c708853b-5afd-4fce-9e39-a5f7c335206b" />
+                    <div className="flex gap-2 items-start">
+                      <input value={form.gif_url} onChange={e => setForm({ ...form, gif_url: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400"
+                        placeholder="ej: c708853b-5afd-4fce-9e39-a5f7c335206b" />
+                      {form.gif_url && (
+                        <img src={`https://adminweb.blob.core.windows.net/gym1/${form.gif_url}.gif`}
+                          alt="preview" className="w-14 h-14 rounded-lg object-cover bg-gym-900 shrink-0"
+                          onError={e => { e.target.style.display = 'none' }} />
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
