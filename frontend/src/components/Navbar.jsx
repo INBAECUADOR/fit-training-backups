@@ -16,6 +16,10 @@ const links = [
 export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const isAdmin = user.role === 'admin'
+
+  const visibleLinks = isAdmin ? links : links.filter(l => l.to !== '/admin' && l.to !== '/ai-agent')
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -36,7 +40,7 @@ export default function Navbar() {
         </button>
 
         <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
-          {links.map(link => (
+          {visibleLinks.map(link => (
             <button
               key={link.to}
               onClick={() => navigate(link.to)}

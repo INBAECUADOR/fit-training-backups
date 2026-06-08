@@ -88,51 +88,62 @@ REGLAS:
 
 
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000);
-    const response = await fetch(OPENROUTER_API, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3001',
-        'X-Title': 'FitTrainingApp',
-      },
-      body: JSON.stringify({
-        model: 'openrouter/free',
-        messages: [
-          { role: 'system', content: 'Sos un entrenador de fisicoculturismo natural experto. Respondé ÚNICAMENTE con JSON válido, sin markdown, sin código, sin texto adicional. Seguí la estructura exacta solicitada.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.5,
-        max_tokens: 8192,
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+    const FREE_MODELS = [
+      'google/gemma-4-31b-it:free',
+      'qwen/qwen3-next-80b-a3b-instruct:free',
+      'liquid/lfm-2.5-1.2b-instruct:free',
+      'openai/gpt-oss-20b:free',
+    ];
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('OpenRouter error:', response.status, err);
-      return res.status(502).json({ error: 'Error al generar plan', detail: err });
+    let lastError = '';
+    for (const model of FREE_MODELS) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      try {
+        const response = await fetch(OPENROUTER_API, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:3001',
+            'X-Title': 'FitTrainingApp',
+          },
+          body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.5, max_tokens: 8192 }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          lastError = await response.text();
+          console.error(`Model ${model} failed:`, response.status, lastError.substring(0, 200));
+          continue;
+        }
+
+        const data = await response.json();
+        const msg = data?.choices?.[0]?.message || {};
+        let text = msg.content || msg.reasoning || '{}';
+        let match = text.match(/\{[\s\S]*\}/);
+        if (!match) match = text.match(/\[[\s\S]*\]/);
+        let clean = (match ? match[0] : text)
+          .replace(/```json\s*/gi, '').replace(/```\s*/g, '')
+          .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          .replace(/,(\s*[}\]])/g, '$1').trim();
+
+        let result;
+        try { result = JSON.parse(clean); } catch { continue; }
+
+        if (result.routines && result.diet) {
+          return res.json(result);
+        }
+      } catch (err) {
+        clearTimeout(timeout);
+        lastError = err.message;
+        console.error(`Model ${model} error:`, err.message);
+        continue;
+      }
     }
 
-    const data = await response.json();
-    const text = data?.choices?.[0]?.message?.content || '{}';
-    const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-
-    let result;
-    try {
-      result = JSON.parse(clean);
-    } catch {
-      return res.status(422).json({ error: 'El AI devolvió un formato inválido', raw: clean });
-    }
-
-    if (!result.routines || !result.diet) {
-      return res.status(422).json({ error: 'El AI no generó la estructura completa', raw: clean });
-    }
-
-    res.json(result);
+    return res.status(502).json({ error: 'Error al generar el plan', detail: lastError });
   } catch (err) {
     if (err.name === 'AbortError') {
       return res.status(504).json({ error: 'Tiempo de espera agotado' });
@@ -181,8 +192,16 @@ router.post('/approve', async (req, res) => {
       const routineId = routineMap[dayName];
       if (!routineId) continue;
       for (const ex of (dayData.exercises || [])) {
-        db.run(`INSERT INTO exercises (routine_id, name, series, reps, observation) VALUES (?, ?, ?, ?, ?)`,
-          [routineId, ex.name, ex.series || 0, ex.reps || 0, ex.observation || '']);
+        // Look up gif_url from global_exercises by name match
+        let gifUrl = '';
+        let globalId = null;
+        const globalResult = db.exec(`SELECT id, gif_url FROM global_exercises WHERE LOWER(name) = LOWER(?) OR LOWER(name_es) = LOWER(?)`, [ex.name, ex.name]);
+        if (globalResult.length > 0 && globalResult[0].values.length > 0) {
+          globalId = globalResult[0].values[0][0];
+          gifUrl = globalResult[0].values[0][1] || '';
+        }
+        db.run(`INSERT INTO exercises (routine_id, name, series, reps, observation, gif_url, global_exercise_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [routineId, ex.name, ex.series || 0, ex.reps || 0, ex.observation || '', gifUrl, globalId]);
       }
     }
 

@@ -146,7 +146,7 @@ export const downloadExport = (type) => {
 // --- AI Agent ---
 
 export const aiGeneratePlan = (data) =>
-  api.post('/ai/generate', data, { timeout: 60000 }).then(r => r.data)
+  api.post('/ai/generate', data, { timeout: 120000 }).then(r => r.data)
 
 export const aiApprovePlan = (data) =>
   api.post('/ai/approve', data).then(r => r.data)

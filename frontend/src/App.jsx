@@ -15,6 +15,14 @@ function PrivateRoute({ children }) {
   return token ? children : <Navigate to="/login" />
 }
 
+function AdminRoute({ children }) {
+  const token = localStorage.getItem('token')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  if (!token) return <Navigate to="/login" />
+  if (user.role !== 'admin') return <Navigate to="/" />
+  return children
+}
+
 export default function App() {
   return (
     <div className="min-h-screen bg-gym-900">
@@ -26,8 +34,8 @@ export default function App() {
         <Route path="/evolution" element={<PrivateRoute><Evolution /></PrivateRoute>} />
         <Route path="/pr-board" element={<PrivateRoute><PRBoard /></PrivateRoute>} />
         <Route path="/calories" element={<PrivateRoute><CalorieCalculator /></PrivateRoute>} />
-        <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
-        <Route path="/ai-agent" element={<PrivateRoute><AgentIA /></PrivateRoute>} />
+        <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+        <Route path="/ai-agent" element={<AdminRoute><AgentIA /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
