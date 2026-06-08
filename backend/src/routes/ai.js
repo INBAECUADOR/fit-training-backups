@@ -14,7 +14,7 @@ const MEAL_LABELS = { breakfast: 'Desayuno', morning_snack: 'Snack Mañana', lun
 
 router.post('/generate', async (req, res) => {
   try {
-    const { age, weight, height, gender, goal, experience, trainingDays, mealsPerDay, allergies, conditions, equipment } = req.body;
+    const { age, weight, height, gender, goal, experience, trainingDays, mealsPerDay, allergies, conditions, equipment, observations } = req.body;
 
     if (!age || !trainingDays || !mealsPerDay) {
       return res.status(400).json({ error: 'Edad, días de entrenamiento y comidas al día son requeridos' });
@@ -43,6 +43,7 @@ DATOS DEL CLIENTE:
 - Alergias/intolerancias: ${allergies || 'ninguna'}
 - Condiciones/lesiones: ${conditions || 'ninguna'}
 - Equipo disponible: ${equipment || 'gimnasio completo'}
+${observations ? `\nOBSERVACIONES ESPECÍFICAS DEL ENTRENADOR:\n${observations}\n` : ''}
 
 PRINCIPIOS DE ENTRENAMIENTO:
 1. Incluí cardio al inicio o final (10-20 min, variado)

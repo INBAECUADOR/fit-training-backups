@@ -253,11 +253,11 @@ export default function Admin() {
   }
 
   // --- User CRUD ---
-  const [userForm, setUserForm] = useState({ document_id: '', email: '', name: '', password: '' })
+  const [userForm, setUserForm] = useState({ document_id: '', email: '', name: '', password: '', membership_end_date: '' })
   const [showUserForm, setShowUserForm] = useState(false)
   const [editingUserId, setEditingUserId] = useState(null)
 
-  const resetUserForm = () => setUserForm({ document_id: '', email: '', name: '', password: '' })
+  const resetUserForm = () => setUserForm({ document_id: '', email: '', name: '', password: '', membership_end_date: '' })
 
   const handleSaveUser = async () => {
     try {
@@ -279,7 +279,7 @@ export default function Admin() {
   }
 
   const handleEditUser = (u) => {
-    setUserForm({ document_id: u.document_id, email: u.email || '', name: u.name, password: '' })
+    setUserForm({ document_id: u.document_id, email: u.email || '', name: u.name, password: '', membership_end_date: u.membership_end_date || '' })
     setEditingUserId(u.id)
     setShowUserForm(true)
   }
@@ -874,6 +874,11 @@ export default function Admin() {
                     <input type="password" value={userForm.password} onChange={e => setUserForm(f => ({ ...f, password: e.target.value }))}
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm" />
                   </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">Fin de membresía</label>
+                    <input type="date" value={userForm.membership_end_date} onChange={e => setUserForm(f => ({ ...f, membership_end_date: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm" />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={handleSaveUser} className="px-4 py-2 bg-gradient-to-r from-gym-400 to-orange-500 text-white rounded-xl text-sm font-bold">
@@ -893,6 +898,11 @@ export default function Admin() {
                     <p className="text-xs text-gray-500">
                       Doc: {u.document_id}{u.email ? ` · ${u.email}` : ''}
                     </p>
+                    {u.membership_end_date && (
+                      <p className={`text-xs mt-0.5 ${new Date(u.membership_end_date) < new Date() ? 'text-gym-400 font-bold' : 'text-emerald-400'}`}>
+                        {new Date(u.membership_end_date) < new Date() ? '🚫 Vencido: ' : '✅ Hasta: '}{new Date(u.membership_end_date).toLocaleDateString('es-MX')}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     <button onClick={() => handleEditUser(u)} className="p-1.5 text-gray-400 hover:text-gym-300 transition"><Pencil size={14} /></button>

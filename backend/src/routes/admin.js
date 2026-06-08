@@ -16,9 +16,9 @@ function targetUser(req) {
 router.get('/users', async (req, res) => {
   try {
     const db = await getDb();
-    const result = db.exec(`SELECT id, document_id, email, name, role FROM users ORDER BY id`);
+    const result = db.exec(`SELECT id, document_id, email, name, role, membership_end_date FROM users ORDER BY id`);
     const users = result.length > 0 ? result[0].values.map(row => ({
-      id: row[0], document_id: row[1], email: row[2], name: row[3], role: row[4],
+      id: row[0], document_id: row[1], email: row[2], name: row[3], role: row[4], membership_end_date: row[5] || '',
     })) : [];
     res.json(users);
   } catch (err) {
@@ -58,10 +58,10 @@ router.post('/users', async (req, res) => {
 
 router.put('/users/:id', async (req, res) => {
   try {
-    const { document_id, email, name, password } = req.body;
+    const { document_id, email, name, password, membership_end_date } = req.body;
     const db = await getDb();
-    let sql = 'UPDATE users SET document_id = ?, email = ?, name = ?';
-    const params = [document_id || '', email || '', name || ''];
+    let sql = 'UPDATE users SET document_id = ?, email = ?, name = ?, membership_end_date = ?';
+    const params = [document_id || '', email || '', name || '', membership_end_date || ''];
     if (password) {
       const hashed = bcrypt.hashSync(password, 10);
       sql += ', password = ?';

@@ -17,7 +17,7 @@ export default function AgentIA() {
   const [form, setForm] = useState({
     age: '', weight: '', height: '', gender: '', goal: '',
     experience: '', trainingDays: '5', mealsPerDay: '5',
-    allergies: '', conditions: '', equipment: 'gimnasio completo',
+    allergies: '', conditions: '', equipment: 'gimnasio completo', observations: '',
   })
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -170,6 +170,12 @@ export default function AgentIA() {
                   <label className="text-xs text-gray-500 block mb-1">Condiciones / lesiones</label>
                   <input value={form.conditions} onChange={e => update('conditions', e.target.value)}
                     className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Ej: dolor lumbar, hombro lesionado..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-gray-500 block mb-1">Observaciones específicas para el coach</label>
+                  <textarea value={form.observations} onChange={e => update('observations', e.target.value)}
+                    className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400 resize-none" rows={3}
+                    placeholder="Ej: necesita ejercicios de rehabilitación, prefiere rutinas cortas de 45min, tiene horarios específicos..." />
                 </div>
               </div>
               <button onClick={handleGenerate} disabled={generating}

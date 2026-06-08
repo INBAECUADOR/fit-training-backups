@@ -18,6 +18,9 @@ export default function Navbar() {
   const location = useLocation()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const isAdmin = user.role === 'admin'
+  const membershipEnd = user.membership_end_date
+  const isExpired = membershipEnd && new Date(membershipEnd) < new Date()
+  const expiringSoon = membershipEnd && !isExpired && (new Date(membershipEnd) - new Date()) / (1000*60*60*24) <= 15
 
   const visibleLinks = isAdmin ? links : links.filter(l => l.to !== '/admin' && l.to !== '/ai-agent')
 
@@ -37,6 +40,8 @@ export default function Navbar() {
             className="h-9 w-auto"
           />
           <span className="font-extrabold text-white text-lg hidden sm:block">EnriquezMania</span>
+          {isExpired && <span className="ml-2 bg-gym-400 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">SUSPENDIDO</span>}
+          {expiringSoon && <span className="ml-2 bg-amber-500/20 text-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold">PRÓXIMO A VENCER</span>}
         </button>
 
         <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">

@@ -16,11 +16,11 @@ router.post('/login', async (req, res) => {
 
     let userRow = null;
     if (credential.includes('@')) {
-      const result = db.exec(`SELECT id, name, document_id, email, password, role FROM users WHERE email = ?`, [credential]);
+      const result = db.exec(`SELECT id, name, document_id, email, password, role, membership_end_date FROM users WHERE email = ?`, [credential]);
       if (result.length > 0 && result[0].values.length > 0) userRow = result[0].values[0];
     }
     if (!userRow) {
-      const result = db.exec(`SELECT id, name, document_id, email, password, role FROM users WHERE document_id = ?`, [credential]);
+      const result = db.exec(`SELECT id, name, document_id, email, password, role, membership_end_date FROM users WHERE document_id = ?`, [credential]);
       if (result.length > 0 && result[0].values.length > 0) userRow = result[0].values[0];
     }
 
@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Email/documento o contraseña incorrectos' });
     }
 
-    const user = { id: userRow[0], name: userRow[1], document_id: userRow[2], email: userRow[3], password: userRow[4], role: userRow[5] };
+    const user = { id: userRow[0], name: userRow[1], document_id: userRow[2], email: userRow[3], password: userRow[4], role: userRow[5], membership_end_date: userRow[6] || '' };
 
     const valid = bcrypt.compareSync(password, user.password);
     if (!valid) {
