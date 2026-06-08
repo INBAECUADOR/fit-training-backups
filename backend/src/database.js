@@ -61,6 +61,23 @@ async function getDb() {
 
   try { db.run(`ALTER TABLE exercises ADD COLUMN global_exercise_id INTEGER DEFAULT NULL`); } catch (e) {}
 
+  try { db.run(`ALTER TABLE measurements ADD COLUMN photo1 TEXT DEFAULT ''`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN photo2 TEXT DEFAULT ''`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN photo3 TEXT DEFAULT ''`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN photo4 TEXT DEFAULT ''`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN height REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN neck REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN shoulders REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN back REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN biceps REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN forearms REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN wrist REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN mid_abdomen REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN hips REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN thigh REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN mid_thigh REAL DEFAULT 0`); } catch (e) {}
+  try { db.run(`ALTER TABLE measurements ADD COLUMN calf REAL DEFAULT 0`); } catch (e) {}
+
   db.run(`CREATE TABLE IF NOT EXISTS exercise_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,

@@ -195,16 +195,16 @@ router.get('/global-exercises', async (req, res) => {
   try {
     const db = await getDb();
     const { search, group } = req.query;
-    let sql = 'SELECT id, name, muscle_group, description, gif_url FROM global_exercises';
+    let sql = 'SELECT id, name, muscle_group, description, gif_url, name_es FROM global_exercises';
     const params = [];
     const conditions = [];
-    if (search) { conditions.push('name LIKE ?'); params.push(`%${search}%`); }
+    if (search) { conditions.push('(name LIKE ? OR name_es LIKE ?)'); params.push(`%${search}%`, `%${search}%`); }
     if (group) { conditions.push('muscle_group = ?'); params.push(group); }
     if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
     sql += ' ORDER BY muscle_group, name';
     const result = db.exec(sql, params);
     const exercises = result.length > 0 ? result[0].values.map(row => ({
-      id: row[0], name: row[1], muscle_group: row[2], description: row[3], gif_url: row[4],
+      id: row[0], name: row[1], muscle_group: row[2], description: row[3], gif_url: row[4], name_es: row[5],
     })) : [];
     res.json(exercises);
   } catch (err) {
@@ -214,11 +214,11 @@ router.get('/global-exercises', async (req, res) => {
 
 router.post('/global-exercises', async (req, res) => {
   try {
-    const { name, muscle_group, description, gif_url } = req.body;
+    const { name, name_es, muscle_group, description, gif_url } = req.body;
     if (!name || !muscle_group) return res.status(400).json({ error: 'name y muscle_group son requeridos' });
     const db = await getDb();
-    db.run(`INSERT INTO global_exercises (name, muscle_group, description, gif_url) VALUES (?, ?, ?, ?)`,
-      [name, muscle_group, description || '', gif_url || '']);
+    db.run(`INSERT INTO global_exercises (name, name_es, muscle_group, description, gif_url) VALUES (?, ?, ?, ?, ?)`,
+      [name, name_es || '', muscle_group, description || '', gif_url || '']);
     saveDb();
     res.json({ message: 'Ejercicio global creado' });
   } catch (err) {
@@ -228,10 +228,10 @@ router.post('/global-exercises', async (req, res) => {
 
 router.put('/global-exercises/:id', async (req, res) => {
   try {
-    const { name, muscle_group, description, gif_url } = req.body;
+    const { name, name_es, muscle_group, description, gif_url } = req.body;
     const db = await getDb();
-    db.run(`UPDATE global_exercises SET name = ?, muscle_group = ?, description = ?, gif_url = ? WHERE id = ?`,
-      [name, muscle_group || '', description || '', gif_url || '', req.params.id]);
+    db.run(`UPDATE global_exercises SET name = ?, name_es = ?, muscle_group = ?, description = ?, gif_url = ? WHERE id = ?`,
+      [name, name_es || '', muscle_group || '', description || '', gif_url || '', req.params.id]);
     saveDb();
     res.json({ message: 'Ejercicio global actualizado' });
   } catch (err) {

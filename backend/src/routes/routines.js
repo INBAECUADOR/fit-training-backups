@@ -31,7 +31,7 @@ router.get('/:dayName', authenticate, async (req, res) => {
     const exercises = result.length > 0 ? result[0].values.map(row => ({
       id: row[0], name: row[1], series: row[2], reps: row[3],
       observation: row[4],
-      gifUrl: row[5] ? `https://adminweb.blob.core.windows.net/gym1/${row[5]}.gif` : ''
+      gifUrl: row[5] ? (row[5].includes('://') ? row[5] : `https://adminweb.blob.core.windows.net/gym1/${row[5]}.gif`) : ''
     })) : [];
 
     res.json(exercises);

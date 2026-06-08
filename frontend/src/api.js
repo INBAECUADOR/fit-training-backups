@@ -39,8 +39,15 @@ export const getResults = (exerciseId) =>
 export const getMeasurements = (params) =>
   api.get('/measurements', { params }).then(r => r.data)
 
-export const saveMeasurement = (data, params) =>
-  api.post('/measurements', data, { params }).then(r => r.data)
+export const saveMeasurement = (data, params) => {
+  if (data instanceof FormData) {
+    return api.post('/measurements', data, { params, headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+  }
+  return api.post('/measurements', data, { params }).then(r => r.data)
+}
+
+export const deleteMeasurement = (id) =>
+  api.delete(`/measurements/${id}`).then(r => r.data)
 
 export const getWeightHistory = () =>
   api.get('/measurements/weight').then(r => r.data)
@@ -135,5 +142,13 @@ export const downloadExport = (type) => {
     URL.revokeObjectURL(link.href)
   })
 }
+
+// --- AI Agent ---
+
+export const aiGeneratePlan = (data) =>
+  api.post('/ai/generate', data, { timeout: 60000 }).then(r => r.data)
+
+export const aiApprovePlan = (data) =>
+  api.post('/ai/approve', data).then(r => r.data)
 
 export default api

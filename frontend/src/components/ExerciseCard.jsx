@@ -1,17 +1,23 @@
-import React from 'react'
-import { Clipboard, TrendingUp } from 'lucide-react'
+import React, { useState } from 'react'
+import { Clipboard, TrendingUp, Maximize2 } from 'lucide-react'
 
 export default function ExerciseCard({ exercise, onRegister, onProgress }) {
+  const [expandedGif, setExpandedGif] = useState(null)
+
   return (
+    <>
     <div className="bg-gym-800/50 border border-gym-700/50 rounded-xl overflow-hidden hover:border-gym-600 transition group">
       {exercise.gifUrl && (
-        <div className="aspect-video bg-gym-900 overflow-hidden">
+        <div className="aspect-video bg-gym-900 overflow-hidden relative cursor-pointer" onClick={() => setExpandedGif(exercise.gifUrl)}>
           <img
             src={exercise.gifUrl}
             alt={exercise.name}
             className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
             loading="lazy"
           />
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition flex items-center justify-center">
+            <Maximize2 size={24} className="text-white opacity-0 group-hover:opacity-100 transition" />
+          </div>
         </div>
       )}
       <div className="p-4">
@@ -41,5 +47,16 @@ export default function ExerciseCard({ exercise, onRegister, onProgress }) {
         </div>
       </div>
     </div>
+
+    {expandedGif && (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setExpandedGif(null)}>
+        <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+          <button onClick={() => setExpandedGif(null)}
+            className="absolute -top-10 right-0 text-white hover:text-gray-300 transition text-lg font-bold">Cerrar ✕</button>
+          <img src={expandedGif} alt="Ejercicio" className="w-full rounded-xl shadow-2xl" />
+        </div>
+      </div>
+    )}
+    </>
   )
 }

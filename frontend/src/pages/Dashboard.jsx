@@ -35,6 +35,7 @@ export default function Dashboard() {
   )
 
   const firstName = data.userName?.split(' ')[0] || ''
+  const greeting = firstName.toLowerCase().endsWith('a') ? 'Bienvenida' : 'Bienvenido'
 
   return (
     <div className="min-h-screen bg-gym-900">
@@ -48,7 +49,7 @@ export default function Dashboard() {
             className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-gym-500 shadow-xl shrink-0"
           />
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-extrabold text-white truncate">¡Bienvenido, {firstName}!</h1>
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white truncate">¡{greeting}, {firstName}!</h1>
             <p className="text-gray-400 text-sm mt-0.5">
               Hoy es <span className="text-gym-300 font-semibold">{data.todayName}</span>
               {data.isWeekend && <span className="text-gray-500 ml-2">— día de descanso</span>}

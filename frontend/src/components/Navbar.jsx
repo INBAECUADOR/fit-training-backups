@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy, LogOut, Calculator, Shield } from 'lucide-react'
+import { LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy, LogOut, Calculator, Shield, Bot } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const links = [
@@ -10,6 +10,7 @@ const links = [
   { to: '/pr-board', label: 'Records', icon: Trophy },
   { to: '/calories', label: 'Calorías', icon: Calculator },
   { to: '/admin', label: 'Admin', icon: Shield },
+  { to: '/ai-agent', label: 'Agente IA', icon: Bot },
 ]
 
 export default function Navbar() {

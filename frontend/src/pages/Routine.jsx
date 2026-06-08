@@ -82,7 +82,7 @@ export default function Routine() {
         ) : exercises.length === 0 ? (
           <div className="text-center text-gray-500 py-20">No hay ejercicios para este día</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-6">
             {exercises.map(ex => (
               <ExerciseCard
                 key={ex.id}

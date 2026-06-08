@@ -6,9 +6,9 @@ import {
   adminGetGlobalExercises, adminCreateGlobalExercise, adminUpdateGlobalExercise, adminDeleteGlobalExercise,
   adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser,
   getDiet, saveDiet,
-  getMeasurements, saveMeasurement,
+  getMeasurements, saveMeasurement, deleteMeasurement,
 } from '../api'
-import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -20,6 +20,34 @@ const MEAL_TIMES = [
   { key: 'dinner', label: 'Cena' },
 ]
 const DIET_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+const MUSCLE_GROUPS = [
+  { en: 'pectorals', es: 'Pecho' },
+  { en: 'upper back', es: 'Espalda alta' },
+  { en: 'lats', es: 'Dorsales' },
+  { en: 'delts', es: 'Hombros' },
+  { en: 'biceps', es: 'Bíceps' },
+  { en: 'triceps', es: 'Tríceps' },
+  { en: 'abs', es: 'Abdominales' },
+  { en: 'glutes', es: 'Glúteos' },
+  { en: 'quads', es: 'Cuádriceps' },
+  { en: 'hamstrings', es: 'Isquiotibiales' },
+  { en: 'calves', es: 'Gemelos' },
+  { en: 'forearms', es: 'Antebrazos' },
+  { en: 'traps', es: 'Trapecio' },
+  { en: 'cardiovascular system', es: 'Cardio' },
+  { en: 'abductors', es: 'Abductores' },
+  { en: 'adductors', es: 'Aductores' },
+  { en: 'levator scapulae', es: 'Elevador escápula' },
+  { en: 'serratus anterior', es: 'Serrato' },
+  { en: 'spine', es: 'Espina dorsal' },
+]
+const muscleLabel = (en) => MUSCLE_GROUPS.find(g => g.en === en)?.es || en
+
+const exerciseImgSrc = (gifUrl) => {
+  if (!gifUrl) return null
+  return gifUrl.includes('://') ? gifUrl : `https://adminweb.blob.core.windows.net/gym1/${gifUrl}.gif`
+}
 
 export default function Admin() {
   const navigate = useNavigate()
@@ -47,7 +75,9 @@ export default function Admin() {
 
   // --- Measurements ---
   const [measurements, setMeasurements] = useState([])
-  const [measForm, setMeasForm] = useState({ weight: '', chest: '', waist: '', arms: '', legs: '', notes: '' })
+  const [measForm, setMeasForm] = useState({ weight: '', height: '', neck: '', shoulders: '', chest: '', waist: '', arms: '', legs: '', back: '', biceps: '', forearms: '', wrist: '', mid_abdomen: '', hips: '', thigh: '', mid_thigh: '', calf: '', notes: '' })
+  const [measPhotos, setMeasPhotos] = useState({ photo1: null, photo2: null, photo3: null, photo4: null })
+  const [measPhotoPreviews, setMeasPhotoPreviews] = useState({ photo1: '', photo2: '', photo3: '', photo4: '' })
   const [measSaving, setMeasSaving] = useState(false)
   const [measSaved, setMeasSaved] = useState(false)
 
@@ -56,7 +86,7 @@ export default function Admin() {
   const [catalogSearch, setCatalogSearch] = useState('')
   const [catalogGroup, setCatalogGroup] = useState('')
   const [showGlobalForm, setShowGlobalForm] = useState(false)
-  const [globalForm, setGlobalForm] = useState({ name: '', muscle_group: '', description: '', gif_url: '' })
+  const [globalForm, setGlobalForm] = useState({ name: '', name_es: '', muscle_group: '', description: '', gif_url: '' })
   const [editingGlobal, setEditingGlobal] = useState(null)
   const [showGlobalPicker, setShowGlobalPicker] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
@@ -64,6 +94,7 @@ export default function Admin() {
 
   // --- Exercise form extended ---
   const [globalPickerExercises, setGlobalPickerExercises] = useState([])
+  const [expandedGif, setExpandedGif] = useState(null)
 
   const loadUserData = (userId) => {
     const params = userId ? { user_id: userId } : {}
@@ -80,6 +111,14 @@ export default function Admin() {
   useEffect(() => {
     if (selectedUserId) loadUserData(selectedUserId)
   }, [selectedUserId])
+
+  useEffect(() => {
+    if (tab === 'catalog') loadGlobalCatalog('', '')
+  }, [tab])
+
+  // Root admin — no mostrar tabs de datos si el usuario es admin
+  const selectedUser = users.find(u => u.id === selectedUserId)
+  const isRootAdmin = selectedUser?.role === 'admin'
 
   const loadGlobalCatalog = (search, group) => {
     const params = {}
@@ -128,7 +167,7 @@ export default function Admin() {
   }
 
   const pickFromCatalog = (ex) => {
-    setForm(prev => ({ ...prev, name: ex.name, gif_url: ex.gif_url || prev.gif_url, global_exercise_id: ex.id }))
+    setForm(prev => ({ ...prev, name: ex.name_es || ex.name, gif_url: ex.gif_url || prev.gif_url, global_exercise_id: ex.id }))
     setShowGlobalPicker(false)
     setPickerSearch('')
     setPickerGroup('')
@@ -181,20 +220,35 @@ export default function Admin() {
     e.preventDefault()
     setMeasSaving(true)
     try {
-      await saveMeasurement({
-        weight: parseFloat(measForm.weight) || 0,
-        chest: parseFloat(measForm.chest) || 0,
-        waist: parseFloat(measForm.waist) || 0,
-        arms: parseFloat(measForm.arms) || 0,
-        legs: parseFloat(measForm.legs) || 0,
-        notes: measForm.notes,
-      }, userParams)
+      const fd = new FormData()
+      const fields = ['weight','height','neck','shoulders','chest','waist','arms','legs','back','biceps','forearms','wrist','mid_abdomen','hips','thigh','mid_thigh','calf']
+      fields.forEach(k => fd.append(k, parseFloat(measForm[k]) || 0))
+      fd.append('notes', measForm.notes)
+      if (measPhotos.photo1) fd.append('photo1', measPhotos.photo1)
+      if (measPhotos.photo2) fd.append('photo2', measPhotos.photo2)
+      if (measPhotos.photo3) fd.append('photo3', measPhotos.photo3)
+      if (measPhotos.photo4) fd.append('photo4', measPhotos.photo4)
+      await saveMeasurement(fd, userParams)
       getMeasurements(userParams).then(setMeasurements).catch(() => {})
       setMeasSaved(true)
-      setMeasForm({ weight: '', chest: '', waist: '', arms: '', legs: '', notes: '' })
+      const empty = Object.fromEntries(fields.map(k => [k, '']))
+      setMeasForm({ ...empty, notes: '' })
+      setMeasPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
+      setMeasPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
       setTimeout(() => setMeasSaved(false), 2000)
     } catch {} finally {
       setMeasSaving(false)
+    }
+  }
+
+  const handleMeasPhoto = (field, file) => {
+    setMeasPhotos(p => ({ ...p, [field]: file }))
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => setMeasPhotoPreviews(prev => ({ ...prev, [field]: e.target.result }))
+      reader.readAsDataURL(file)
+    } else {
+      setMeasPhotoPreviews(prev => ({ ...prev, [field]: '' }))
     }
   }
 
@@ -252,7 +306,7 @@ export default function Admin() {
           >
             {users.map(u => (
               <option key={u.id} value={u.id}>
-                {u.name} ({u.document_id}){u.role === 'admin' ? ' 👑' : ''}
+                {u.role === 'admin' ? 'Admin' : u.name} ({u.document_id}){u.role === 'admin' ? ' 👑' : ''}
               </option>
             ))}
             {users.length === 0 && <option value="">Cargando...</option>}
@@ -260,18 +314,19 @@ export default function Admin() {
         </div>
 
         <h1 className="text-3xl font-extrabold text-white mb-6">
-          {users.find(u => u.id === selectedUserId)?.name || 'Administración'}
+          {users.find(u => u.id === selectedUserId)?.role === 'admin' ? 'Admin' : (users.find(u => u.id === selectedUserId)?.name || 'Administración')}
         </h1>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
-            { key: 'exercises', label: 'Ejercicios', icon: Dumbbell },
-            { key: 'diet', label: 'Dietas', icon: Utensils },
-            { key: 'measurements', label: 'Medidas', icon: TrendingUp },
+            { key: 'exercises', label: 'Ejercicios', icon: Dumbbell, hideForAdmin: true },
+            { key: 'diet', label: 'Dietas', icon: Utensils, hideForAdmin: true },
+            { key: 'measurements', label: 'Medidas', icon: TrendingUp, hideForAdmin: true },
             { key: 'users', label: 'Usuarios', icon: UsersIcon },
             { key: 'catalog', label: 'Catálogo', icon: BookOpen },
-          ].map(t => (
+            { key: 'ai', label: 'Agente IA', icon: Bot },
+          ].filter(t => !(isRootAdmin && t.hideForAdmin)).map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm transition whitespace-nowrap ${
                 tab === t.key
@@ -317,9 +372,10 @@ export default function Admin() {
             <div className="space-y-2 mb-6">
               {filtered.map(ex => (
                 <div key={ex.id} className="bg-gym-800/50 border border-gym-700/30 rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-gym-800/70 transition">
-                  {ex.gif_url && (
-                    <img src={`https://adminweb.blob.core.windows.net/gym1/${ex.gif_url}.gif`}
-                      alt={ex.name} className="w-12 h-12 rounded-lg object-cover bg-gym-900 shrink-0"
+                  {exerciseImgSrc(ex.gif_url) && (
+                    <img src={exerciseImgSrc(ex.gif_url)}
+                      alt={ex.name} className="w-32 h-32 rounded-lg object-cover bg-gym-900 shrink-0 cursor-pointer hover:opacity-80 transition"
+                      onClick={() => setExpandedGif(exerciseImgSrc(ex.gif_url))}
                       onError={e => { e.target.style.display = 'none' }} />
                   )}
                   <div className="min-w-0 flex-1">
@@ -365,17 +421,24 @@ export default function Admin() {
                         <select value={pickerGroup} onChange={e => { setPickerGroup(e.target.value); loadPicker(pickerSearch, e.target.value) }}
                           className="px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400">
                           <option value="">Todos</option>
-                          {['Pecho','Espalda','Piernas','Hombros','Bíceps','Tríceps','Abdominales','Glúteos','Trapecio','Antebrazos','Cardio','Compuestos'].map(g => (
-                            <option key={g} value={g}>{g}</option>
+                          {MUSCLE_GROUPS.map(g => (
+                            <option key={g.en} value={g.en}>{g.es}</option>
                           ))}
                         </select>
                       </div>
                       <div className="space-y-1 max-h-60 overflow-y-auto">
                         {globalPickerExercises.map(ex => (
                           <button key={ex.id} onClick={() => pickFromCatalog(ex)}
-                            className="w-full text-left px-3 py-2 bg-gym-900/50 hover:bg-gym-700 rounded-lg transition flex items-center justify-between">
-                            <span className="text-sm text-white">{ex.name}</span>
-                            <span className="text-[10px] text-gray-500">{ex.muscle_group}</span>
+                            className="w-full text-left px-3 py-2 bg-gym-900/50 hover:bg-gym-700 rounded-lg transition flex items-center gap-3">
+                            {exerciseImgSrc(ex.gif_url) && (
+                              <img src={exerciseImgSrc(ex.gif_url)} alt={ex.name}
+                                className="w-16 h-16 rounded-lg object-cover bg-gym-900 shrink-0"
+                                onError={e => { e.target.style.display = 'none' }} />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <span className="text-sm text-white block truncate">{ex.name_es || ex.name}</span>
+                              <span className="text-[10px] text-gray-500">{muscleLabel(ex.muscle_group)}</span>
+                            </div>
                           </button>
                         ))}
                         {globalPickerExercises.length === 0 && <p className="text-center text-gray-500 text-sm py-4">Sin resultados</p>}
@@ -406,14 +469,15 @@ export default function Admin() {
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-400 mb-1">GIF URL (UUID)</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">GIF URL</label>
                     <div className="flex gap-2 items-start">
                       <input value={form.gif_url} onChange={e => setForm({ ...form, gif_url: e.target.value })}
                         className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400"
-                        placeholder="ej: c708853b-5afd-4fce-9e39-a5f7c335206b" />
-                      {form.gif_url && (
-                        <img src={`https://adminweb.blob.core.windows.net/gym1/${form.gif_url}.gif`}
-                          alt="preview" className="w-14 h-14 rounded-lg object-cover bg-gym-900 shrink-0"
+                        placeholder="UUID o URL completa del GIF" />
+                      {exerciseImgSrc(form.gif_url) && (
+                        <img src={exerciseImgSrc(form.gif_url)}
+                          alt="preview" className="w-32 h-32 rounded-lg object-cover bg-gym-900 shrink-0 cursor-pointer hover:opacity-80 transition"
+                          onClick={() => setExpandedGif(exerciseImgSrc(form.gif_url))}
                           onError={e => { e.target.style.display = 'none' }} />
                       )}
                     </div>
@@ -519,44 +583,257 @@ export default function Admin() {
         {tab === 'measurements' && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-400 text-sm">Registrá nuevas medidas corporales</p>
+              <div>
+                <p className="text-gray-400 text-sm">Registrá y seguí las medidas corporales</p>
+                {measurements.length > 1 && (
+                  <p className="text-xs text-gym-300 mt-1">
+                    Última: {measurements[0].date?.slice(0,10)} · Anterior: {measurements[1].date?.slice(0,10)} · Diferencia: {Math.abs(new Date(measurements[0].date) - new Date(measurements[1].date)) / (1000*60*60*24)} días
+                  </p>
+                )}
+              </div>
               <button onClick={() => navigate('/evolution')}
                 className="flex items-center gap-1.5 px-4 py-2 bg-gym-700 text-gray-300 rounded-xl font-bold text-sm hover:bg-gym-600 transition">
                 <ExternalLink size={14} /> Ver evolución
               </button>
             </div>
 
-            <form onSubmit={handleSaveMeas} className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[
-                { key: 'weight', label: 'Peso (kg)' },
-                { key: 'chest', label: 'Pecho (cm)' },
-                { key: 'waist', label: 'Cintura (cm)' },
-                { key: 'arms', label: 'Brazos (cm)' },
-                { key: 'legs', label: 'Piernas (cm)' },
-              ].map(f => (
-                <div key={f.key}>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">{f.label}</label>
-                  <input type="number" step="0.1" value={measForm[f.key]}
-                    onChange={e => setMeasForm({ ...measForm, [f.key]: e.target.value })}
-                    className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white focus:outline-none focus:border-gym-400" />
+            {/* Comparison cards */}
+            {measurements.length >= 2 && (() => {
+              const prev = measurements[measurements.length - 1]
+              const curr = measurements[0]
+              const fields = [
+                { key: 'shoulders', label: 'Hombros' },
+                { key: 'chest', label: 'Pecho' },
+                { key: 'back', label: 'Espalda' },
+                { key: 'neck', label: 'Cuello' },
+                { key: 'biceps', label: 'Bíceps' },
+                { key: 'forearms', label: 'Antebrazos' },
+                { key: 'wrist', label: 'Muñeca' },
+                { key: 'mid_abdomen', label: 'Abdomen Medio' },
+                { key: 'waist', label: 'Cintura' },
+                { key: 'hips', label: 'Cadera' },
+                { key: 'thigh', label: 'Pierna' },
+                { key: 'mid_thigh', label: 'Media Pierna' },
+                { key: 'calf', label: 'Pantorrilla' },
+                { key: 'weight', label: 'Peso', unit: 'kg' },
+                { key: 'height', label: 'Altura', unit: 'cm' },
+              ]
+              return (
+                <div className="bg-gym-800/30 border border-gym-700/30 rounded-xl p-4 mb-6">
+                  <h3 className="text-xs font-bold text-gym-300 uppercase tracking-wider mb-3">Comparación</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                    <div className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[10px] text-gray-600">Fecha Anterior</p>
+                      <p className="text-xs text-gray-400 font-bold">{prev.date?.slice(0,10)}</p>
+                    </div>
+                    <div className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[10px] text-gray-600">Fecha Actual</p>
+                      <p className="text-xs text-gym-300 font-bold">{curr.date?.slice(0,10)}</p>
+                    </div>
+                    <div className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[10px] text-gray-600">Días</p>
+                      <p className="text-xs text-white font-bold">{Math.round(Math.abs(new Date(curr.date) - new Date(prev.date)) / (1000*60*60*24))}</p>
+                    </div>
+                    {fields.map(f => {
+                      const pv = parseFloat(prev[f.key]) || 0
+                      const cv = parseFloat(curr[f.key]) || 0
+                      const diff = (cv - pv).toFixed(1)
+                      const isGood = f.key === 'waist' || f.key === 'mid_abdomen' ? diff <= 0 : diff >= 0
+                      return (
+                        <div key={f.key} className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center border border-gym-700/20">
+                          <p className="text-[10px] text-gray-500">{f.label}</p>
+                          <div className="flex items-center justify-center gap-1 text-xs">
+                            <span className="text-gray-500">{pv.toFixed(1)}</span>
+                            <span className="text-gym-300 font-bold">→ {cv.toFixed(1)}</span>
+                            <span className={`font-bold ${diff > 0 ? 'text-emerald-400' : diff < 0 ? 'text-red-400' : 'text-gray-500'}`}>
+                              {diff > 0 ? '+' : ''}{diff}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              ))}
-              <div className="col-span-2 md:col-span-3">
-                <label className="block text-sm font-medium text-gray-300 mb-1">Notas</label>
+              )
+            })()}
+
+            <form onSubmit={handleSaveMeas} className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-6 mb-6">
+              <h3 className="text-sm font-bold text-white mb-4">Nueva Medición</h3>
+
+              {/* General */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Generales</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[{ key: 'weight', label: 'Peso (kg)', step: '0.1' },
+                    { key: 'height', label: 'Altura (cm)', step: '1' }].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
+                      <input type="number" step={f.step} value={measForm[f.key]}
+                        onChange={e => setMeasForm({ ...measForm, [f.key]: e.target.value })}
+                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Torso Superior */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Torso Superior</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[{ key: 'shoulders', label: 'Hombros (cm)' },
+                    { key: 'chest', label: 'Pecho (cm)' },
+                    { key: 'back', label: 'Espalda (cm)' },
+                    { key: 'neck', label: 'Cuello (cm)' }].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
+                      <input type="number" step="0.1" value={measForm[f.key]}
+                        onChange={e => setMeasForm({ ...measForm, [f.key]: e.target.value })}
+                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Brazos */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Brazos</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[{ key: 'biceps', label: 'Bíceps (cm)' },
+                    { key: 'forearms', label: 'Antebrazos (cm)' },
+                    { key: 'wrist', label: 'Muñeca (cm)' }].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
+                      <input type="number" step="0.1" value={measForm[f.key]}
+                        onChange={e => setMeasForm({ ...measForm, [f.key]: e.target.value })}
+                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Torso Inferior */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Torso Inferior</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[{ key: 'mid_abdomen', label: 'Abdomen Medio (cm)' },
+                    { key: 'waist', label: 'Cintura (cm)' },
+                    { key: 'hips', label: 'Cadera (cm)' }].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
+                      <input type="number" step="0.1" value={measForm[f.key]}
+                        onChange={e => setMeasForm({ ...measForm, [f.key]: e.target.value })}
+                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Piernas */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Piernas</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[{ key: 'thigh', label: 'Pierna (cm)' },
+                    { key: 'mid_thigh', label: 'Media Pierna (cm)' },
+                    { key: 'calf', label: 'Pantorrilla (cm)' }].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
+                      <input type="number" step="0.1" value={measForm[f.key]}
+                        onChange={e => setMeasForm({ ...measForm, [f.key]: e.target.value })}
+                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Photos */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Fotos de Progreso</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { key: 'photo1', label: 'Foto Frontal' },
+                    { key: 'photo2', label: 'Foto Espalda' },
+                    { key: 'photo3', label: 'Foto Lateral' },
+                    { key: 'photo4', label: 'Foto Pose' },
+                  ].map(p => (
+                    <div key={p.key}>
+                      <label className="block text-xs text-gray-400 mb-1">{p.label}</label>
+                      <div className="flex flex-col items-center gap-2">
+                        <label className="flex items-center gap-1.5 px-3 py-2 bg-gym-700 hover:bg-gym-600 text-gym-300 rounded-lg text-xs font-bold cursor-pointer transition w-full justify-center">
+                          <Camera size={14} />
+                          <input type="file" accept="image/*" className="hidden"
+                            onChange={e => handleMeasPhoto(p.key, e.target.files[0])} />
+                        </label>
+                        {measPhotoPreviews[p.key] && (
+                          <img src={measPhotoPreviews[p.key]} alt={p.label}
+                            className="w-full aspect-[3/4] rounded-lg object-cover bg-gym-900" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-400 mb-1">Notas</label>
                 <textarea value={measForm.notes} onChange={e => setMeasForm({ ...measForm, notes: e.target.value })}
-                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white focus:outline-none focus:border-gym-400 resize-none" rows={2} />
+                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 resize-none" rows={2} />
               </div>
-              <div className="col-span-2 md:col-span-3">
-                <button type="submit" disabled={measSaving}
-                  className={`px-6 py-2.5 rounded-lg font-bold transition shadow-lg ${
-                    measSaved
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 hover:from-emerald-400 hover:to-green-500'
-                  }`}>
-                  {measSaving ? 'Guardando...' : measSaved ? 'Guardado ✓' : 'Guardar Medición'}
-                </button>
-              </div>
+
+              <button type="submit" disabled={measSaving}
+                className={`px-6 py-2.5 rounded-lg font-bold transition shadow-lg ${
+                  measSaved
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 hover:from-emerald-400 hover:to-green-500'
+                }`}>
+                {measSaving ? 'Guardando...' : measSaved ? 'Guardado ✓' : 'Guardar Medición'}
+              </button>
             </form>
+
+            {/* Measurements history */}
+            {measurements.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-white mb-3">Historial ({measurements.length})</h3>
+                <div className="space-y-2">
+                  {measurements.map(m => (
+                    <div key={m.id} className="bg-gym-800/30 border border-gym-700/30 rounded-xl p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-gray-500 mb-1">{m.date?.slice(0,10)}</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300">
+                            <span>Peso: <strong>{m.weight} kg</strong></span>
+                            <span>Hombros: <strong>{m.shoulders}</strong></span>
+                            <span>Pecho: <strong>{m.chest}</strong></span>
+                            <span>Espalda: <strong>{m.back}</strong></span>
+                            <span>Bíceps: <strong>{m.biceps}</strong></span>
+                            <span>Abdomen: <strong>{m.mid_abdomen}</strong></span>
+                            <span>Cintura: <strong>{m.waist}</strong></span>
+                            <span>Cadera: <strong>{m.hips}</strong></span>
+                            <span>Pierna: <strong>{m.thigh}</strong></span>
+                            <span>Pantorrilla: <strong>{m.calf}</strong></span>
+                          </div>
+                          {m.notes && <p className="text-xs text-gray-500 mt-1">{m.notes}</p>}
+                          {[m.photo1, m.photo2, m.photo3, m.photo4].filter(Boolean).length > 0 && (
+                            <div className="flex gap-2 mt-2">
+                              {[m.photo1, m.photo2, m.photo3, m.photo4].map((p, i) => p && (
+                                <img key={i} src={p} alt={`Foto ${i+1}`}
+                                  className="w-16 h-20 rounded-lg object-cover bg-gym-900 cursor-pointer hover:opacity-80 transition"
+                                  onClick={() => setExpandedGif(p)} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={async () => {
+                          if (!confirm('¿Eliminar esta medición?')) return
+                          try { await deleteMeasurement(m.id); setMeasurements(prev => prev.filter(x => x.id !== m.id)) } catch {}
+                        }} className="p-1.5 text-gray-400 hover:text-gym-400 transition shrink-0" title="Eliminar">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -629,12 +906,25 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ======== TAB: AI AGENT ======== */}
+        {tab === 'ai' && (
+          <div className="text-center py-20">
+            <Bot size={48} className="mx-auto text-gym-400 mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Agente IA</h2>
+            <p className="text-gray-400 mb-6">Generá rutinas y dietas con inteligencia artificial</p>
+            <button onClick={() => navigate('/ai-agent')}
+              className="bg-gradient-to-r from-gym-400 to-orange-500 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg hover:from-red-500 hover:to-orange-600 transition">
+              Ir al Agente IA →
+            </button>
+          </div>
+        )}
+
         {/* ======== TAB: CATALOG ======== */}
         {tab === 'catalog' && (
           <div>
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-400 text-sm">Catálogo global de ejercicios ({globalExercises.length})</p>
-              <button onClick={() => { setShowGlobalForm(true); setEditingGlobal(null); setGlobalForm({ name: '', muscle_group: '', description: '', gif_url: '' }) }}
+              <button onClick={() => { setShowGlobalForm(true); setEditingGlobal(null); setGlobalForm({ name: '', name_es: '', muscle_group: '', description: '', gif_url: '' }) }}
                 className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 rounded-xl font-bold text-sm transition shadow-lg hover:from-emerald-400 hover:to-green-500">
                 <Plus size={14} /> Nuevo ejercicio
               </button>
@@ -644,13 +934,13 @@ export default function Admin() {
               <div className="relative flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input value={catalogSearch} onChange={e => { setCatalogSearch(e.target.value); loadGlobalCatalog(e.target.value, catalogGroup) }}
-                  className="w-full pl-8 pr-3 py-2 bg-gym-800 border border-gym-700 rounded-xl text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Buscar en el catálogo..." />
+                  className="w-full pl-8 pr-3 py-2 bg-gym-800 border border-gym-700 rounded-xl text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Buscar ejercicio..." />
               </div>
               <select value={catalogGroup} onChange={e => { setCatalogGroup(e.target.value); loadGlobalCatalog(catalogSearch, e.target.value) }}
                 className="px-3 py-2 bg-gym-800 border border-gym-700 rounded-xl text-white text-sm focus:outline-none focus:border-gym-400">
                 <option value="">Todos los grupos</option>
-                {['Pecho','Espalda','Piernas','Hombros','Bíceps','Tríceps','Abdominales','Glúteos','Trapecio','Antebrazos','Cardio','Compuestos'].map(g => (
-                  <option key={g} value={g}>{g}</option>
+                {MUSCLE_GROUPS.map(g => (
+                  <option key={g.en} value={g.en}>{g.es}</option>
                 ))}
               </select>
             </div>
@@ -665,20 +955,25 @@ export default function Admin() {
                     <input value={globalForm.name} onChange={e => setGlobalForm({ ...globalForm, name: e.target.value })}
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
                   </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-gray-400 mb-1">Nombre (español)</label>
+                    <input value={globalForm.name_es} onChange={e => setGlobalForm({ ...globalForm, name_es: e.target.value })}
+                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                  </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">Grupo muscular</label>
                     <select value={globalForm.muscle_group} onChange={e => setGlobalForm({ ...globalForm, muscle_group: e.target.value })}
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400">
                       <option value="">Seleccionar...</option>
-                      {['Pecho','Espalda','Piernas','Hombros','Bíceps','Tríceps','Abdominales','Glúteos','Trapecio','Antebrazos','Cardio','Compuestos'].map(g => (
-                        <option key={g} value={g}>{g}</option>
+                      {MUSCLE_GROUPS.map(g => (
+                        <option key={g.en} value={g.en}>{g.es}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">GIF URL (UUID)</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">GIF URL</label>
                     <input value={globalForm.gif_url} onChange={e => setGlobalForm({ ...globalForm, gif_url: e.target.value })}
-                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" placeholder="UUID o URL completa del GIF" />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-400 mb-1">Descripción</label>
@@ -709,21 +1004,29 @@ export default function Admin() {
 
             {/* Global exercises list grouped */}
             <div className="space-y-3">
-              {['Pecho','Espalda','Piernas','Hombros','Bíceps','Tríceps','Abdominales','Glúteos','Trapecio','Antebrazos','Cardio','Compuestos'].map(group => {
-                const groupExercises = globalExercises.filter(e => e.muscle_group === group)
+              {MUSCLE_GROUPS.map(g => {
+                const groupExercises = globalExercises.filter(e => e.muscle_group === g.en)
                 if (groupExercises.length === 0) return null
                 return (
-                  <div key={group} className="bg-gym-800/30 border border-gym-700/30 rounded-xl overflow-hidden">
+                  <div key={g.en} className="bg-gym-800/30 border border-gym-700/30 rounded-xl overflow-hidden">
                     <div className="px-4 py-2 bg-gym-800/50 border-b border-gym-700/30">
-                      <span className="text-sm font-bold text-gym-300">{group}</span>
+                      <span className="text-sm font-bold text-gym-300">{g.es}</span>
                       <span className="text-xs text-gray-500 ml-2">({groupExercises.length})</span>
                     </div>
                     <div className="divide-y divide-gym-700/20">
                       {groupExercises.map(ex => (
                         <div key={ex.id} className="px-4 py-2 flex items-center justify-between hover:bg-gym-800/30 transition">
-                          <span className="text-sm text-white">{ex.name}</span>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {exerciseImgSrc(ex.gif_url) && (
+                              <img src={exerciseImgSrc(ex.gif_url)} alt={ex.name}
+                                className="w-24 h-24 rounded-lg object-cover bg-gym-900 shrink-0 cursor-pointer hover:opacity-80 transition"
+                                onClick={() => setExpandedGif(exerciseImgSrc(ex.gif_url))}
+                                onError={e => { e.target.style.display = 'none' }} />
+                            )}
+                            <span className="text-sm text-white truncate">{ex.name_es || ex.name}</span>
+                          </div>
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <button onClick={() => { setGlobalForm({ name: ex.name, muscle_group: ex.muscle_group, description: ex.description, gif_url: ex.gif_url }); setEditingGlobal(ex); setShowGlobalForm(true) }}
+                            <button onClick={() => { setGlobalForm({ name: ex.name, name_es: ex.name_es || '', muscle_group: ex.muscle_group, description: ex.description, gif_url: ex.gif_url }); setEditingGlobal(ex); setShowGlobalForm(true) }}
                               className="p-1 text-gray-400 hover:text-gym-300 transition" title="Editar"><Pencil size={12} /></button>
                             <button onClick={async () => {
                               if (!confirm(`¿Eliminar "${ex.name}" del catálogo?`)) return
@@ -739,6 +1042,17 @@ export default function Admin() {
               {globalExercises.length === 0 && (
                 <p className="text-center text-gray-500 py-8">No se encontraron ejercicios en el catálogo</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* GIF expand modal */}
+        {expandedGif && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setExpandedGif(null)}>
+            <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setExpandedGif(null)}
+                className="absolute -top-10 right-0 text-white hover:text-gray-300 transition text-lg font-bold">Cerrar ✕</button>
+              <img src={expandedGif} alt="Ejercicio" className="w-full rounded-xl shadow-2xl" />
             </div>
           </div>
         )}
