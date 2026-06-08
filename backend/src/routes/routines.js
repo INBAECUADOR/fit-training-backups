@@ -21,7 +21,7 @@ router.get('/:dayName', authenticate, async (req, res) => {
   try {
     const db = await getDb();
     const result = db.exec(`
-      SELECT e.id, e.name, e.series, e.reps, e.observation, e.gif_url
+      SELECT e.id, e.name, e.series, e.reps, e.observation, e.gif_url, e.rest
       FROM exercises e
       JOIN routines r ON e.routine_id = r.id
       WHERE r.user_id = ? AND r.day_name = ?
@@ -31,7 +31,8 @@ router.get('/:dayName', authenticate, async (req, res) => {
     const exercises = result.length > 0 ? result[0].values.map(row => ({
       id: row[0], name: row[1], series: row[2], reps: row[3],
       observation: row[4],
-      gifUrl: row[5] ? (row[5].includes('://') ? row[5] : `https://adminweb.blob.core.windows.net/gym1/${row[5]}.gif`) : ''
+      gifUrl: row[5] ? (row[5].includes('://') ? row[5] : `https://adminweb.blob.core.windows.net/gym1/${row[5]}.gif`) : '',
+      rest: row[6] || '',
     })) : [];
 
     res.json(exercises);

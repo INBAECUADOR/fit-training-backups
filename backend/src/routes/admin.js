@@ -133,7 +133,7 @@ router.get('/exercises', async (req, res) => {
     const db = await getDb();
     const uid = targetUser(req);
     const result = db.exec(`
-      SELECT e.id, e.name, e.series, e.reps, e.observation, e.gif_url, e.routine_id, r.day_name, r.day_label
+      SELECT e.id, e.name, e.series, e.reps, e.observation, e.gif_url, e.rest, e.routine_id, r.day_name, r.day_label
       FROM exercises e
       JOIN routines r ON e.routine_id = r.id
       WHERE r.user_id = ?
@@ -141,8 +141,8 @@ router.get('/exercises', async (req, res) => {
     `, [uid]);
     const exercises = result.length > 0 ? result[0].values.map(row => ({
       id: row[0], name: row[1], series: row[2], reps: row[3],
-      observation: row[4], gif_url: row[5], routine_id: row[6],
-      day_name: row[7], day_label: row[8],
+      observation: row[4], gif_url: row[5], rest: row[6] || '',
+      routine_id: row[7], day_name: row[8], day_label: row[9],
     })) : [];
     res.json(exercises);
   } catch (err) {
@@ -152,11 +152,11 @@ router.get('/exercises', async (req, res) => {
 
 router.post('/exercises', async (req, res) => {
   try {
-    const { routine_id, name, series, reps, observation, gif_url, global_exercise_id } = req.body;
+    const { routine_id, name, series, reps, rest, observation, gif_url, global_exercise_id } = req.body;
     if (!routine_id || !name) return res.status(400).json({ error: 'routine_id y name son requeridos' });
     const db = await getDb();
-    db.run(`INSERT INTO exercises (routine_id, name, series, reps, observation, gif_url, global_exercise_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [routine_id, name, series || 0, reps || 0, observation || '', gif_url || '', global_exercise_id || null]);
+    db.run(`INSERT INTO exercises (routine_id, name, series, reps, rest, observation, gif_url, global_exercise_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [routine_id, name, series || 0, reps || 0, rest || '', observation || '', gif_url || '', global_exercise_id || null]);
     saveDb();
     res.json({ message: 'Ejercicio creado' });
   } catch (err) {
@@ -166,10 +166,10 @@ router.post('/exercises', async (req, res) => {
 
 router.put('/exercises/:id', async (req, res) => {
   try {
-    const { name, series, reps, observation, gif_url } = req.body;
+    const { name, series, reps, rest, observation, gif_url } = req.body;
     const db = await getDb();
-    db.run(`UPDATE exercises SET name = ?, series = ?, reps = ?, observation = ?, gif_url = ? WHERE id = ?`,
-      [name, series || 0, reps || 0, observation || '', gif_url || '', req.params.id]);
+    db.run(`UPDATE exercises SET name = ?, series = ?, reps = ?, rest = ?, observation = ?, gif_url = ? WHERE id = ?`,
+      [name, series || 0, reps || 0, rest || '', observation || '', gif_url || '', req.params.id]);
     saveDb();
     res.json({ message: 'Ejercicio actualizado' });
   } catch (err) {

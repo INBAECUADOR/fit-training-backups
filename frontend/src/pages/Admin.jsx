@@ -71,7 +71,7 @@ export default function Admin() {
   const [editingExercise, setEditingExercise] = useState(null)
   const [editingRoutine, setEditingRoutine] = useState(null)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', series: '', reps: '', observation: '', gif_url: '', global_exercise_id: null })
+  const [form, setForm] = useState({ name: '', series: '', reps: '', rest: '', observation: '', gif_url: '', global_exercise_id: null })
   const [expandedDays, setExpandedDays] = useState(DAYS.reduce((a, d) => ({ ...a, [d]: true }), {}))
 
   // --- Diet ---
@@ -148,7 +148,7 @@ export default function Admin() {
     } catch {}
   }
 
-  const resetForm = () => setForm({ name: '', series: '', reps: '', observation: '', gif_url: '', global_exercise_id: null })
+  const resetForm = () => setForm({ name: '', series: '', reps: '', rest: '', observation: '', gif_url: '', global_exercise_id: null })
 
   const handleSaveExercise = async () => {
     const routine = routines.find(r => r.day_name === selectedDay)
@@ -189,7 +189,7 @@ export default function Admin() {
 
   const handleEdit = (ex) => {
     setEditingExercise(ex)
-    setForm({ name: ex.name, series: String(ex.series), reps: String(ex.reps), observation: ex.observation || '', gif_url: ex.gif_url || '' })
+    setForm({ name: ex.name, series: String(ex.series), reps: String(ex.reps), rest: ex.rest || '', observation: ex.observation || '', gif_url: ex.gif_url || '' })
     setShowForm(true)
   }
 
@@ -537,6 +537,11 @@ export default function Admin() {
                     <label className="block text-xs font-medium text-gray-400 mb-1">Reps</label>
                     <input type="number" value={form.reps} onChange={e => setForm({ ...form, reps: e.target.value })}
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">Descanso</label>
+                    <input value={form.rest} onChange={e => setForm({ ...form, rest: e.target.value })}
+                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Ej: 90s, 60s" />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-400 mb-1">Observación</label>

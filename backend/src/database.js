@@ -62,6 +62,7 @@ async function getDb() {
   )`);
 
   try { db.run(`ALTER TABLE exercises ADD COLUMN global_exercise_id INTEGER DEFAULT NULL`); } catch (e) {}
+  try { db.run(`ALTER TABLE exercises ADD COLUMN rest TEXT DEFAULT ''`); } catch (e) {}
 
   try { db.run(`ALTER TABLE measurements ADD COLUMN photo1 TEXT DEFAULT ''`); } catch (e) {}
   try { db.run(`ALTER TABLE measurements ADD COLUMN photo2 TEXT DEFAULT ''`); } catch (e) {}

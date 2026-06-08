@@ -28,8 +28,7 @@ router.post('/generate', async (req, res) => {
     const daysCount = Math.min(parseInt(trainingDays) || 5, 7);
     const userDays = DAYS.slice(0, daysCount);
 
-    const prompt = `Actuás como un entrenador de fisicoculturismo natural, motivacional y dinámico.
-Generá una rutina de entrenamiento y una dieta personalizada.
+    const prompt = `Actuás como un entrenador de fisicoculturismo natural experto. Generá una rutina de entrenamiento INTENSA de AL MENOS 60-90 MINUTOS por sesión, y una dieta personalizada.
 
 DATOS DEL CLIENTE:
 - Edad: ${age} años
@@ -45,13 +44,15 @@ DATOS DEL CLIENTE:
 - Equipo disponible: ${equipment || 'gimnasio completo'}
 ${observations ? `\nOBSERVACIONES ESPECÍFICAS DEL ENTRENADOR:\n${observations}\n` : ''}
 
-PRINCIPIOS DE ENTRENAMIENTO:
-1. Incluí cardio al inicio o final (10-20 min, variado)
-2. Usá superseries y ejercicios combinados para eficiencia
-3. Priorizá ejercicios compuestos (sentadilla, press banca, dominadas, etc.)
-4. Variá estímulos: cambios de agarre, tempo, ángulos
-5. Motivá al cliente en las observaciones de cada ejercicio
-6. Incluí 1 ejercicio de abdominales/core por día
+PRINCIPIOS DE ENTRENAMIENTO (OBLIGATORIO):
+1. CADA SESIÓN debe durar 60-90 MINUTOS
+2. 8-12 EJERCICIOS por día (incluye cardio corto al inicio y abdominales al final)
+3. Incluí TIEMPO DE DESCANSO específico entre series (ej: "60s", "90s", "120s")
+4. Usá superseries y ejercicios combinados para eficiencia
+5. Priorizá ejercicios compuestos (sentadilla, press banca, dominadas, peso muerto, press militar)
+6. Variá estímulos: cambios de agarre, tempo, ángulos
+7. Las observaciones deben ser profesionales y técnicas, no motivacionales
+8. Incluí 1 ejercicio de abdominales/core al final de cada día
 
 Devolvé SOLO un JSON sin markdown ni texto adicional.
 
@@ -61,7 +62,7 @@ ESTRUCTURA EXACTA:
     "Lunes": {
       "day_label": "ej: PECHO - ESPALDA",
       "exercises": [
-        { "name": "Press Banca", "series": 4, "reps": 10, "observation": "nota motivacional" }
+        { "name": "Press Banca", "series": 4, "reps": 10, "rest": "90s", "observation": "nota técnica sobre ejecución" }
       ]
     }
   },
@@ -81,11 +82,13 @@ ESTRUCTURA EXACTA:
 
 REGLAS:
 - Incluí SOLO los días: ${userDays.join(', ')}
-- 6-9 ejercicios por día (incluye cardio y abs)
+- 8-12 ejercicios por día (incluye cardio corto y abs)
+- CADA ejercicio debe tener "rest" con el tiempo de descanso (ej: "60s", "90s", "120s")
+- Todas las observaciones deben ser técnicas sobre ejecución y forma
 - Todos los 7 días para la dieta
-- Comidas con cantidades específicas
+- Comidas con cantidades específicas en gramos
 - Calorías y proteínas realistas
-- Nota final motivacional`;
+- Nota final profesional`;
 
 
 
@@ -193,39 +196,62 @@ router.post('/approve', async (req, res) => {
       const routineId = routineMap[dayName];
       if (!routineId) continue;
       for (const ex of (dayData.exercises || [])) {
-        // Fuzzy match against global_exercises by name or name_es
+        // Precise match against global_exercises
         let gifUrl = '';
         let globalId = null;
-        const name = ex.name.toLowerCase().replace(/[^\w\s]/g, '');
-        const words = name.split(/\s+/).filter(w => w.length > 2 && !['las','los','con','sin','para','una','uno','del','por'].includes(w));
-        const conditions = words.map(() => `(LOWER(name) LIKE ? OR LOWER(name_es) LIKE ?)`).join(' OR ');
-        const likeWords = words.flatMap(w => [`%${w}%`, `%${w}%`]);
+        // Strip parenthesized suffixes like "(Calentamiento)" before matching
+        const name = ex.name.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        const cleanName = name.replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim();
+        const words = cleanName.split(/\s+/).filter(w => w.length > 2 && !['las','los','con','sin','para','una','uno','del','por','que','por'].includes(w));
         let bestMatch = null;
         let bestScore = 0;
-        if (words.length > 0) {
-          const globalResult = db.exec(`SELECT id, gif_url, name, name_es FROM global_exercises WHERE ${conditions}`, likeWords);
-          if (globalResult.length > 0) {
-            for (const row of globalResult[0].values) {
-              const gn = (row[2] || '').toLowerCase();
-              const gne = (row[3] || '').toLowerCase();
-              let score = words.filter(w => gn.includes(w) || gne.includes(w)).length;
-              // Bonus for exact name match
-              if (gn === name || gne === name) score += 10;
-              if (score > bestScore) { bestScore = score; bestMatch = row; }
+
+        const allExercises = db.exec(`SELECT id, gif_url, name, name_es FROM global_exercises`);
+        if (allExercises.length > 0) {
+          const catalog = allExercises[0].values;
+
+          // 1. Exact match (highest priority)
+          for (const row of catalog) {
+            const gn = (row[2] || '').toLowerCase().trim();
+            const gne = (row[3] || '').toLowerCase().trim();
+            if (gn === cleanName || gne === cleanName) {
+              bestMatch = row; bestScore = 100; break;
             }
           }
+
+          // 2. Contains match (name contains catalog name or vice versa)
+          if (!bestMatch) {
+            for (const row of catalog) {
+              const gn = (row[2] || '').toLowerCase();
+              const gne = (row[3] || '').toLowerCase();
+              const combined = gn + ' ' + gne;
+              if (combined.includes(cleanName) || cleanName.includes(gn) || cleanName.includes(gne)) {
+                if (60 > bestScore) { bestScore = 60; bestMatch = row; }
+              }
+            }
+          }
+
+          // 3. Word matching with percentage threshold
+          if (!bestMatch && words.length > 0) {
+            for (const row of catalog) {
+              const gn = (row[2] || '').toLowerCase();
+              const gne = (row[3] || '').toLowerCase();
+              const combined = gn + ' ' + gne;
+              const matched = words.filter(w => combined.includes(w)).length;
+              const ratio = matched / words.length;
+              if (ratio > bestScore) { bestScore = ratio; bestMatch = row; }
+            }
+            // Accept word matches above 40% (AI generates Spanish names, catalog has English + some Spanish)
+            if (bestScore <= 0.4) bestMatch = null;
+          }
         }
-        // Try direct name match first
-        if (!bestMatch) {
-          const directResult = db.exec(`SELECT id, gif_url FROM global_exercises WHERE LOWER(name) = LOWER(?) OR LOWER(name_es) = LOWER(?)`, [ex.name, ex.name]);
-          if (directResult.length > 0 && directResult[0].values.length > 0) bestMatch = directResult[0].values[0];
-        }
+
         if (bestMatch) {
           globalId = bestMatch[0];
           gifUrl = bestMatch[1] || '';
         }
-        db.run(`INSERT INTO exercises (routine_id, name, series, reps, observation, gif_url, global_exercise_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [routineId, ex.name, ex.series || 0, ex.reps || 0, ex.observation || '', gifUrl, globalId]);
+        db.run(`INSERT INTO exercises (routine_id, name, series, reps, rest, observation, gif_url, global_exercise_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [routineId, ex.name, ex.series || 0, ex.reps || 0, ex.rest || '', ex.observation || '', gifUrl, globalId]);
       }
     }
 
