@@ -31,6 +31,7 @@ async function getDb() {
   try { db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`); } catch (e) {}
   try { db.run(`ALTER TABLE users ADD COLUMN email TEXT DEFAULT ''`); } catch (e) {}
   try { db.run(`ALTER TABLE users ADD COLUMN membership_end_date TEXT DEFAULT ''`); } catch (e) {}
+  try { db.run(`ALTER TABLE users ADD COLUMN membership_start_date TEXT DEFAULT ''`); } catch (e) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS routines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

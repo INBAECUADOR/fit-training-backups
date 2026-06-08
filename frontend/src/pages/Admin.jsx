@@ -7,8 +7,9 @@ import {
   adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser,
   getDiet, saveDiet,
   getMeasurements, saveMeasurement, deleteMeasurement,
+  aiGeneratePlan, aiApprovePlan,
 } from '../api'
-import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -20,6 +21,12 @@ const MEAL_TIMES = [
   { key: 'dinner', label: 'Cena' },
 ]
 const DIET_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+const AI_GOALS = ['bajar de peso', 'ganar masa muscular', 'tonificar', 'mantener peso', 'resistencia', 'fuerza']
+const AI_EXPERIENCE = ['principiante', 'intermedio', 'avanzado']
+const AI_GENDERS = ['masculino', 'femenino']
+const AI_EQUIPMENT = ['gimnasio completo', 'gimnasio básico', 'casa con mancuernas', 'casa sin equipamiento']
+const AI_MEAL_LABELS = { breakfast: 'Desayuno', morning_snack: 'Snack Mañana', lunch: 'Almuerzo', afternoon_snack: 'Snack Tarde', dinner: 'Cena' }
 
 const MUSCLE_GROUPS = [
   { en: 'pectorals', es: 'Pecho' },
@@ -253,11 +260,11 @@ export default function Admin() {
   }
 
   // --- User CRUD ---
-  const [userForm, setUserForm] = useState({ document_id: '', email: '', name: '', password: '', membership_end_date: '' })
+  const [userForm, setUserForm] = useState({ document_id: '', email: '', name: '', password: '', membership_start_date: '', membership_end_date: '' })
   const [showUserForm, setShowUserForm] = useState(false)
   const [editingUserId, setEditingUserId] = useState(null)
 
-  const resetUserForm = () => setUserForm({ document_id: '', email: '', name: '', password: '', membership_end_date: '' })
+  const resetUserForm = () => setUserForm({ document_id: '', email: '', name: '', password: '', membership_start_date: '', membership_end_date: '' })
 
   const handleSaveUser = async () => {
     try {
@@ -279,7 +286,7 @@ export default function Admin() {
   }
 
   const handleEditUser = (u) => {
-    setUserForm({ document_id: u.document_id, email: u.email || '', name: u.name, password: '', membership_end_date: u.membership_end_date || '' })
+    setUserForm({ document_id: u.document_id, email: u.email || '', name: u.name, password: '', membership_start_date: u.membership_start_date || '', membership_end_date: u.membership_end_date || '' })
     setEditingUserId(u.id)
     setShowUserForm(true)
   }
@@ -290,6 +297,74 @@ export default function Admin() {
       await adminDeleteUser(id)
       setUsers(prev => prev.filter(u => u.id !== id))
     } catch {}
+  }
+
+  // --- AI Agent ---
+  const [aiForm, setAiForm] = useState({
+    age: '', weight: '', height: '', gender: '', goal: '',
+    experience: '', trainingDays: '5', mealsPerDay: '5',
+    allergies: '', conditions: '', equipment: 'gimnasio completo', observations: '',
+  })
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiSaving, setAiSaving] = useState(false)
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState('')
+  const [aiExpandedDay, setAiExpandedDay] = useState(null)
+  const [aiSuccess, setAiSuccess] = useState('')
+  const [aiAssignUser, setAiAssignUser] = useState('')
+
+  const aiUpdate = (key, val) => setAiForm(prev => ({ ...prev, [key]: val }))
+
+  const handleAiGenerate = async () => {
+    if (!aiForm.age || !aiForm.trainingDays || !aiForm.mealsPerDay) {
+      setAiError('Completá al menos edad, días de entrenamiento y comidas al día')
+      return
+    }
+    setAiGenerating(true)
+    setAiError('')
+    setAiResult(null)
+    setAiSuccess('')
+    try {
+      const data = await aiGeneratePlan(aiForm)
+      setAiResult(data)
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.raw?.substring(0, 300) || 'Error al generar el plan'
+      setAiError(msg)
+    }
+    setAiGenerating(false)
+  }
+
+  const handleAiApprove = async () => {
+    if (!aiAssignUser) { setAiError('Seleccioná un usuario para asignar el plan'); return }
+    setAiSaving(true)
+    setAiError('')
+    setAiSuccess('')
+    try {
+      await aiApprovePlan({
+        userId: parseInt(aiAssignUser),
+        routines: aiResult.routines,
+        diet: aiResult.diet,
+      })
+      setAiSuccess(`Plan asignado correctamente a ${users.find(u => u.id === parseInt(aiAssignUser))?.name || ''}`)
+    } catch (err) {
+      setAiError(err.response?.data?.error || 'Error al asignar el plan')
+    }
+    setAiSaving(false)
+  }
+
+  const renderAiDietDay = (day) => {
+    const meals = aiResult.diet[day]
+    if (!meals) return <p className="text-gray-500 text-sm">Sin datos</p>
+    return (
+      <div className="space-y-2">
+        {Object.entries(meals).map(([type, desc]) => (
+          <div key={type} className="bg-gym-800/30 rounded-lg px-3 py-2">
+            <p className="text-xs text-gray-500 uppercase tracking-wider">{MEAL_LABELS[type] || type}</p>
+            <p className="text-sm text-white">{desc}</p>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -875,6 +950,11 @@ export default function Admin() {
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm" />
                   </div>
                   <div>
+                    <label className="block text-xs text-gray-400 mb-1">Inicio de membresía</label>
+                    <input type="date" value={userForm.membership_start_date} onChange={e => setUserForm(f => ({ ...f, membership_start_date: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm" />
+                  </div>
+                  <div>
                     <label className="block text-xs text-gray-400 mb-1">Fin de membresía</label>
                     <input type="date" value={userForm.membership_end_date} onChange={e => setUserForm(f => ({ ...f, membership_end_date: e.target.value }))}
                       className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm" />
@@ -900,6 +980,7 @@ export default function Admin() {
                     </p>
                     {u.membership_end_date && (
                       <p className={`text-xs mt-0.5 ${new Date(u.membership_end_date) < new Date() ? 'text-gym-400 font-bold' : 'text-emerald-400'}`}>
+                        {u.membership_start_date ? `📅 ${new Date(u.membership_start_date).toLocaleDateString('es-MX')} → ` : ''}
                         {new Date(u.membership_end_date) < new Date() ? '🚫 Vencido: ' : '✅ Hasta: '}{new Date(u.membership_end_date).toLocaleDateString('es-MX')}
                       </p>
                     )}
@@ -918,14 +999,212 @@ export default function Admin() {
 
         {/* ======== TAB: AI AGENT ======== */}
         {tab === 'ai' && (
-          <div className="text-center py-20">
-            <Bot size={48} className="mx-auto text-gym-400 mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Agente IA</h2>
-            <p className="text-gray-400 mb-6">Generá rutinas y dietas con inteligencia artificial</p>
-            <button onClick={() => navigate('/ai-agent')}
-              className="bg-gradient-to-r from-gym-400 to-orange-500 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg hover:from-red-500 hover:to-orange-600 transition">
-              Ir al Agente IA →
-            </button>
+          <div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-5">
+                  <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <User size={18} className="text-gym-300" /> Datos del cliente
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Edad *</label>
+                      <input type="number" value={aiForm.age} onChange={e => aiUpdate('age', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Peso (kg)</label>
+                      <input type="number" value={aiForm.weight} onChange={e => aiUpdate('weight', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Altura (cm)</label>
+                      <input type="number" value={aiForm.height} onChange={e => aiUpdate('height', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Género</label>
+                      <select value={aiForm.gender} onChange={e => aiUpdate('gender', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400">
+                        <option value="">Seleccionar</option>
+                        {AI_GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Objetivo</label>
+                      <select value={aiForm.goal} onChange={e => aiUpdate('goal', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400">
+                        <option value="">Seleccionar</option>
+                        {AI_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Experiencia</label>
+                      <select value={aiForm.experience} onChange={e => aiUpdate('experience', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400">
+                        <option value="">Seleccionar</option>
+                        {AI_EXPERIENCE.map(e => <option key={e} value={e}>{e}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Días x semana *</label>
+                      <input type="number" min={1} max={7} value={aiForm.trainingDays} onChange={e => aiUpdate('trainingDays', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Comidas x día *</label>
+                      <input type="number" min={2} max={6} value={aiForm.mealsPerDay} onChange={e => aiUpdate('mealsPerDay', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 block mb-1">Equipo disponible</label>
+                      <select value={aiForm.equipment} onChange={e => aiUpdate('equipment', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400">
+                        {AI_EQUIPMENT.map(e => <option key={e} value={e}>{e}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 block mb-1">Alergias / intolerancias</label>
+                      <input value={aiForm.allergies} onChange={e => aiUpdate('allergies', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Ej: lactosa, gluten, frutos secos..." />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 block mb-1">Condiciones / lesiones</label>
+                      <input value={aiForm.conditions} onChange={e => aiUpdate('conditions', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Ej: dolor lumbar, hombro lesionado..." />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 block mb-1">Observaciones específicas para el coach</label>
+                      <textarea value={aiForm.observations} onChange={e => aiUpdate('observations', e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400 resize-none" rows={3}
+                        placeholder="Ej: necesita ejercicios de rehabilitación, prefiere rutinas cortas de 45min, tiene horarios específicos..." />
+                    </div>
+                  </div>
+                  <button onClick={handleAiGenerate} disabled={aiGenerating}
+                    className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-gym-400 to-orange-500 text-white rounded-xl font-bold transition hover:opacity-90 disabled:opacity-50">
+                    {aiGenerating ? <Loader2 size={18} className="animate-spin" /> : <Bot size={18} />}
+                    {aiGenerating ? 'Generando...' : 'Generar plan con IA'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {aiError && (
+                  <div className="bg-gym-900/50 border border-gym-400/30 rounded-xl p-4 flex items-start gap-3">
+                    <AlertCircle size={18} className="text-gym-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white font-semibold text-sm">Error</p>
+                      <p className="text-gray-400 text-sm">{aiError}</p>
+                    </div>
+                  </div>
+                )}
+
+                {aiSuccess && (
+                  <div className="bg-emerald-900/30 border border-emerald-500/30 rounded-xl p-4 flex items-start gap-3">
+                    <Check size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <p className="text-emerald-300 text-sm">{aiSuccess}</p>
+                  </div>
+                )}
+
+                {!aiResult && !aiGenerating && !aiError && (
+                  <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-10 text-center">
+                    <Bot size={48} className="text-gym-700 mx-auto mb-4" />
+                    <p className="text-gray-500">Completá los datos del cliente y generá el plan</p>
+                  </div>
+                )}
+
+                {aiGenerating && (
+                  <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-10 text-center">
+                    <Loader2 size={40} className="text-gym-300 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-400">El agente IA está generando el plan personalizado...</p>
+                    <p className="text-gray-600 text-xs mt-2">Esto puede tomar hasta 30 segundos</p>
+                  </div>
+                )}
+
+                {aiResult && !aiGenerating && (
+                  <div className="space-y-4">
+                    <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                          <Dumbbell size={18} className="text-gym-300" /> Rutina
+                        </h2>
+                        {aiResult.dailyCalories && (
+                          <span className="text-sm text-gym-300 font-bold">~{aiResult.dailyCalories} kcal/día</span>
+                        )}
+                      </div>
+                      {aiResult.notes && (
+                        <p className="text-xs text-gray-500 mb-3 italic">{aiResult.notes}</p>
+                      )}
+                      <div className="space-y-2">
+                        {Object.entries(aiResult.routines).map(([day, dayData]) => (
+                          <div key={day} className="bg-gym-800/50 rounded-xl overflow-hidden">
+                            <button onClick={() => setAiExpandedDay(aiExpandedDay === day ? null : day)}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-gym-700/50 transition">
+                              <div className="text-left">
+                                <p className="text-sm font-bold text-white">{day}</p>
+                                <p className="text-xs text-gray-500">{dayData.day_label}</p>
+                              </div>
+                              {aiExpandedDay === day ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                            </button>
+                            {aiExpandedDay === day && (
+                              <div className="px-4 pb-3 space-y-1.5">
+                                {dayData.exercises?.map((ex, i) => (
+                                  <div key={i} className="bg-gym-700/30 rounded-lg px-3 py-2 flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm text-white">{ex.name}</p>
+                                      {ex.observation && <p className="text-xs text-gray-500">{ex.observation}</p>}
+                                    </div>
+                                    <div className="text-right shrink-0 ml-2">
+                                      <p className="text-sm font-bold text-gym-300">{ex.series}×{ex.reps}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-4">
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                        <Apple size={18} className="text-gym-300" /> Dieta
+                      </h2>
+                      <div className="space-y-2">
+                        {Object.entries(aiResult.diet).map(([day, meals]) => (
+                          <div key={day} className="bg-gym-800/50 rounded-xl overflow-hidden">
+                            <button onClick={() => setAiExpandedDay(aiExpandedDay === `diet-${day}` ? null : `diet-${day}`)}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-gym-700/50 transition">
+                              <p className="text-sm font-bold text-white">{day}</p>
+                              {aiExpandedDay === `diet-${day}` ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                            </button>
+                            {aiExpandedDay === `diet-${day}` && (
+                              <div className="px-4 pb-3">
+                                {renderAiDietDay(day)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-4">
+                      <label className="text-xs text-gray-500 block mb-2">Asignar plan a usuario</label>
+                      <select value={aiAssignUser} onChange={e => setAiAssignUser(e.target.value)}
+                        className="w-full bg-gym-700 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm mb-3 focus:outline-none focus:border-gym-400">
+                        <option value="">Seleccionar usuario</option>
+                        {users.filter(u => u.role !== 'admin').map(u => <option key={u.id} value={u.id}>{u.name} ({u.document_id})</option>)}
+                      </select>
+                      <button onClick={handleAiApprove} disabled={aiSaving || !aiAssignUser}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 rounded-xl font-bold transition hover:opacity-90 disabled:opacity-50">
+                        {aiSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                        {aiSaving ? 'Asignando...' : 'Asignar plan al usuario'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

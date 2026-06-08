@@ -193,13 +193,36 @@ router.post('/approve', async (req, res) => {
       const routineId = routineMap[dayName];
       if (!routineId) continue;
       for (const ex of (dayData.exercises || [])) {
-        // Look up gif_url from global_exercises by name match
+        // Fuzzy match against global_exercises by name or name_es
         let gifUrl = '';
         let globalId = null;
-        const globalResult = db.exec(`SELECT id, gif_url FROM global_exercises WHERE LOWER(name) = LOWER(?) OR LOWER(name_es) = LOWER(?)`, [ex.name, ex.name]);
-        if (globalResult.length > 0 && globalResult[0].values.length > 0) {
-          globalId = globalResult[0].values[0][0];
-          gifUrl = globalResult[0].values[0][1] || '';
+        const name = ex.name.toLowerCase().replace(/[^\w\s]/g, '');
+        const words = name.split(/\s+/).filter(w => w.length > 2 && !['las','los','con','sin','para','una','uno','del','por'].includes(w));
+        const conditions = words.map(() => `(LOWER(name) LIKE ? OR LOWER(name_es) LIKE ?)`).join(' OR ');
+        const likeWords = words.flatMap(w => [`%${w}%`, `%${w}%`]);
+        let bestMatch = null;
+        let bestScore = 0;
+        if (words.length > 0) {
+          const globalResult = db.exec(`SELECT id, gif_url, name, name_es FROM global_exercises WHERE ${conditions}`, likeWords);
+          if (globalResult.length > 0) {
+            for (const row of globalResult[0].values) {
+              const gn = (row[2] || '').toLowerCase();
+              const gne = (row[3] || '').toLowerCase();
+              let score = words.filter(w => gn.includes(w) || gne.includes(w)).length;
+              // Bonus for exact name match
+              if (gn === name || gne === name) score += 10;
+              if (score > bestScore) { bestScore = score; bestMatch = row; }
+            }
+          }
+        }
+        // Try direct name match first
+        if (!bestMatch) {
+          const directResult = db.exec(`SELECT id, gif_url FROM global_exercises WHERE LOWER(name) = LOWER(?) OR LOWER(name_es) = LOWER(?)`, [ex.name, ex.name]);
+          if (directResult.length > 0 && directResult[0].values.length > 0) bestMatch = directResult[0].values[0];
+        }
+        if (bestMatch) {
+          globalId = bestMatch[0];
+          gifUrl = bestMatch[1] || '';
         }
         db.run(`INSERT INTO exercises (routine_id, name, series, reps, observation, gif_url, global_exercise_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [routineId, ex.name, ex.series || 0, ex.reps || 0, ex.observation || '', gifUrl, globalId]);

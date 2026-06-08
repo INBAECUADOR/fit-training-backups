@@ -16,9 +16,9 @@ function targetUser(req) {
 router.get('/users', async (req, res) => {
   try {
     const db = await getDb();
-    const result = db.exec(`SELECT id, document_id, email, name, role, membership_end_date FROM users ORDER BY id`);
+    const result = db.exec(`SELECT id, document_id, email, name, role, membership_end_date, membership_start_date FROM users ORDER BY id`);
     const users = result.length > 0 ? result[0].values.map(row => ({
-      id: row[0], document_id: row[1], email: row[2], name: row[3], role: row[4], membership_end_date: row[5] || '',
+      id: row[0], document_id: row[1], email: row[2], name: row[3], role: row[4], membership_end_date: row[5] || '', membership_start_date: row[6] || '',
     })) : [];
     res.json(users);
   } catch (err) {
@@ -28,7 +28,7 @@ router.get('/users', async (req, res) => {
 
 router.post('/users', async (req, res) => {
   try {
-    const { document_id, email, name, password } = req.body;
+    const { document_id, email, name, password, membership_start_date, membership_end_date } = req.body;
     if (!document_id || !name || !password) return res.status(400).json({ error: 'document_id, name y password son requeridos' });
     const db = await getDb();
     const existing = db.exec(`SELECT id FROM users WHERE document_id = ?`, [document_id]);
@@ -36,8 +36,8 @@ router.post('/users', async (req, res) => {
       return res.status(400).json({ error: 'Ya existe un usuario con ese documento' });
     }
     const hashed = bcrypt.hashSync(password, 10);
-    db.run(`INSERT INTO users (document_id, email, name, password, role) VALUES (?, ?, ?, ?, 'user')`,
-      [document_id, email || '', name, hashed]);
+    db.run(`INSERT INTO users (document_id, email, name, password, role, membership_start_date, membership_end_date) VALUES (?, ?, ?, ?, 'user', ?, ?)`,
+      [document_id, email || '', name, hashed, membership_start_date || '', membership_end_date || '']);
     saveDb();
     const res2 = db.exec(`SELECT id FROM users WHERE document_id = ?`, [document_id]);
     const newId = res2[0].values[0][0];
@@ -58,10 +58,10 @@ router.post('/users', async (req, res) => {
 
 router.put('/users/:id', async (req, res) => {
   try {
-    const { document_id, email, name, password, membership_end_date } = req.body;
+    const { document_id, email, name, password, membership_start_date, membership_end_date } = req.body;
     const db = await getDb();
-    let sql = 'UPDATE users SET document_id = ?, email = ?, name = ?, membership_end_date = ?';
-    const params = [document_id || '', email || '', name || '', membership_end_date || ''];
+    let sql = 'UPDATE users SET document_id = ?, email = ?, name = ?, membership_start_date = ?, membership_end_date = ?';
+    const params = [document_id || '', email || '', name || '', membership_start_date || '', membership_end_date || ''];
     if (password) {
       const hashed = bcrypt.hashSync(password, 10);
       sql += ', password = ?';
