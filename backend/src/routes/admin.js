@@ -16,9 +16,9 @@ function targetUser(req) {
 router.get('/users', async (req, res) => {
   try {
     const db = await getDb();
-    const result = db.exec(`SELECT id, document_id, email, name, role, membership_end_date, membership_start_date FROM users ORDER BY id`);
+    const result = db.exec(`SELECT id, document_id, email, name, role, membership_end_date, membership_start_date, avatar_url FROM users ORDER BY id`);
     const users = result.length > 0 ? result[0].values.map(row => ({
-      id: row[0], document_id: row[1], email: row[2], name: row[3], role: row[4], membership_end_date: row[5] || '', membership_start_date: row[6] || '',
+      id: row[0], document_id: row[1], email: row[2], name: row[3], role: row[4], membership_end_date: row[5] || '', membership_start_date: row[6] || '', avatar_url: row[7] || '',
     })) : [];
     res.json(users);
   } catch (err) {

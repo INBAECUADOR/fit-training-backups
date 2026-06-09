@@ -151,4 +151,12 @@ export const aiGeneratePlan = (data) =>
 export const aiApprovePlan = (data) =>
   api.post('/ai/approve', data).then(r => r.data)
 
+export const uploadAvatar = (file) => {
+  const formData = new FormData()
+  formData.append('avatar', file)
+  return api.post('/avatar/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data)
+}
+
 export default api

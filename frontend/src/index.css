@@ -1,13 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::selection {
+  background: rgba(233, 69, 96, 0.3);
+  color: white;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #060608; }
+::-webkit-scrollbar-thumb { background: #28283a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a4a; }
+
+@layer components {
+  .card {
+    @apply bg-gym-700/50 border border-gym-600/30 rounded-xl shadow-card backdrop-blur-sm;
+  }
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:border-gym-500/40 transition duration-300;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-gym-400 to-gym-300 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg hover:shadow-glow transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply bg-gym-700 hover:bg-gym-600 text-gray-300 hover:text-white font-semibold py-2 px-4 rounded-xl transition duration-200;
+  }
+  .input {
+    @apply bg-gym-800 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition duration-200;
+  }
+}

@@ -1,6 +1,10 @@
 import React from 'react'
-import { LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy, LogOut, Calculator, Shield, Bot } from 'lucide-react'
+import { LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy, LogOut, Calculator, Shield, Bot, User } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
+
+function getInitials(name) {
+  return name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
+}
 
 const links = [
   { to: '/', label: 'Inicio', icon: LayoutDashboard },
@@ -39,7 +43,7 @@ export default function Navbar() {
             alt="EnriquezMania"
             className="h-9 w-auto"
           />
-          <span className="font-extrabold text-white text-lg hidden sm:block">EnriquezMania</span>
+          <span className="font-extrabold text-white text-lg hidden sm:block tracking-tight">EnriquezMania</span>
           {isExpired && <span className="ml-2 bg-gym-400 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">SUSPENDIDO</span>}
           {expiringSoon && <span className="ml-2 bg-amber-500/20 text-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold">PRÓXIMO A VENCER</span>}
         </button>
@@ -59,13 +63,28 @@ export default function Navbar() {
               <span>{link.label}</span>
             </button>
           ))}
-          <button
-            onClick={handleLogout}
-            className="ml-1 sm:ml-2 p-2 text-gray-400 hover:text-gym-400 transition shrink-0"
-            title="Cerrar sesión"
-          >
-            <LogOut size={20} />
-          </button>
+          <div className="flex items-center gap-1 ml-1 sm:ml-2">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gym-700/50 transition"
+              title="Tu perfil"
+            >
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-lg object-cover border border-gym-600" />
+              ) : (
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-gym-400 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
+                  {getInitials(user.name)}
+                </div>
+              )}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-400 hover:text-gym-400 transition shrink-0"
+              title="Cerrar sesión"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
         </div>
       </div>
     </nav>

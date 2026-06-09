@@ -1,5 +1,8 @@
 node_modules/
 dist/
-data/*.db
+backend/data/
+uploads/
 .DS_Store
 *.log
+ngrok.exe
+*.bat

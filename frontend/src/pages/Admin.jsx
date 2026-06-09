@@ -105,14 +105,18 @@ export default function Admin() {
 
   const loadUserData = (userId) => {
     const params = userId ? { user_id: userId } : {}
-    adminGetRoutines({ params }).then(setRoutines).catch(() => {})
-    adminGetExercises({ params }).then(setExercises).catch(() => {})
+    adminGetRoutines(params).then(setRoutines).catch(() => {})
+    adminGetExercises(params).then(setExercises).catch(() => {})
     getDiet(params).then(setMeals).catch(() => {})
     getMeasurements(params).then(setMeasurements).catch(() => {})
   }
 
   useEffect(() => {
-    adminGetUsers().then(list => { setUsers(list); if (list.length > 0) setSelectedUserId(list[0].id) }).catch(() => {})
+    adminGetUsers().then(list => {
+      setUsers(list)
+      const firstUser = list.find(u => u.role !== 'admin') || list[0]
+      if (firstUser) setSelectedUserId(firstUser.id)
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {

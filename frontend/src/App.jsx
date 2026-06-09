@@ -9,6 +9,7 @@ import PRBoard from './pages/PRBoard'
 import CalorieCalculator from './pages/CalorieCalculator'
 import Admin from './pages/Admin'
 import AgentIA from './pages/AgentIA'
+import Footer from './components/Footer'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
@@ -25,19 +26,22 @@ function AdminRoute({ children }) {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gym-900">
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/routine" element={<PrivateRoute><Routine /></PrivateRoute>} />
-        <Route path="/diet" element={<PrivateRoute><Diet /></PrivateRoute>} />
-        <Route path="/evolution" element={<PrivateRoute><Evolution /></PrivateRoute>} />
-        <Route path="/pr-board" element={<PrivateRoute><PRBoard /></PrivateRoute>} />
-        <Route path="/calories" element={<PrivateRoute><CalorieCalculator /></PrivateRoute>} />
-        <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-        <Route path="/ai-agent" element={<AdminRoute><AgentIA /></AdminRoute>} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+    <div className="min-h-screen bg-gym-900 flex flex-col">
+      <div className="flex-1">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/routine" element={<PrivateRoute><Routine /></PrivateRoute>} />
+          <Route path="/diet" element={<PrivateRoute><Diet /></PrivateRoute>} />
+          <Route path="/evolution" element={<PrivateRoute><Evolution /></PrivateRoute>} />
+          <Route path="/pr-board" element={<PrivateRoute><PRBoard /></PrivateRoute>} />
+          <Route path="/calories" element={<PrivateRoute><CalorieCalculator /></PrivateRoute>} />
+          <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+          <Route path="/ai-agent" element={<AdminRoute><AgentIA /></AdminRoute>} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+      <Footer />
     </div>
   )
 }

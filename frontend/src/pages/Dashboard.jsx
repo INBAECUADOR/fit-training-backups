@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getDashboard, saveWeight } from '../api'
+import { getDashboard, saveWeight, uploadAvatar } from '../api'
 import Navbar from '../components/Navbar'
-import { Flame, Calendar, Trophy, Activity, Dumbbell, ArrowRight, Weight } from 'lucide-react'
+import { Flame, Calendar, Trophy, Activity, Dumbbell, ArrowRight, Weight, Camera } from 'lucide-react'
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
+}
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [weightInput, setWeightInput] = useState('')
   const [weightSaved, setWeightSaved] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const fileInputRef = useRef()
   const navigate = useNavigate()
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
     getDashboard().then(setData).catch(() => {})
@@ -27,6 +34,18 @@ export default function Dashboard() {
     } catch {}
   }
 
+  const handleAvatarChange = async e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const { avatar_url } = await uploadAvatar(file)
+      const updatedUser = { ...user, avatar_url }
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      window.location.reload()
+    } catch { setAvatarUploading(false) }
+  }
+
   if (!data) return (
     <div className="min-h-screen bg-gym-900">
       <Navbar />
@@ -37,17 +56,39 @@ export default function Dashboard() {
   const firstName = data.userName?.split(' ')[0] || ''
   const greeting = firstName.toLowerCase().endsWith('a') ? 'Bienvenida' : 'Bienvenido'
 
+  const hasMembership = user.membership_end_date && user.membership_end_date.trim() !== ''
+  const isExpired = hasMembership && new Date(user.membership_end_date) < new Date()
+  const membershipEndDate = hasMembership ? new Date(user.membership_end_date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : null
+  const membershipStartDate = user.membership_start_date ? new Date(user.membership_start_date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : null
+  const daysLeft = hasMembership ? Math.ceil((new Date(user.membership_end_date) - new Date()) / (1000 * 60 * 60 * 24)) : 0
+
   return (
     <div className="min-h-screen bg-gym-900">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Profile header */}
+        {/* Profile header with avatar */}
         <div className="flex items-center gap-4 mb-8 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5">
-          <img
-            src="https://enriquezmania.com/wp-content/uploads/2024/08/WhatsApp-Image-2024-08-09-at-12.20.13-PM.jpeg"
-            alt="Ing. Jose Luis Enriquez"
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-gym-500 shadow-xl shrink-0"
-          />
+          <div className="relative shrink-0">
+            {user.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt="Tu foto"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-gym-500 shadow-xl"
+              />
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-gym-400 to-orange-500 flex items-center justify-center text-white font-extrabold text-xl sm:text-2xl border-2 border-gym-500 shadow-xl">
+                {getInitials(data.userName || user.name)}
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="absolute -bottom-1 -right-1 p-1.5 bg-gym-700 hover:bg-gym-600 rounded-full border-2 border-gym-900 shadow transition disabled:opacity-50"
+            >
+              <Camera size={12} className="text-white" />
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+          </div>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-3xl font-extrabold text-white truncate">¡{greeting}, {firstName}!</h1>
             <p className="text-gray-400 text-sm mt-0.5">
@@ -58,6 +99,66 @@ export default function Dashboard() {
               Plataforma hecha por Ing. Jose Luis Enriquez
             </p>
           </div>
+        </div>
+
+        {/* Membership card */}
+        <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl ${hasMembership ? (isExpired ? 'bg-red-500/20' : 'bg-emerald-500/20') : 'bg-gym-700/50'}`}>
+                <Calendar size={20} className={hasMembership ? (isExpired ? 'text-red-400' : 'text-emerald-400') : 'text-gray-500'} />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Plan contratado</p>
+                <p className="text-white font-bold text-base">Plan Personalizado</p>
+                {hasMembership && (
+                  <p className={`text-sm mt-0.5 ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {isExpired ? `Vencida el ${membershipEndDate}` : `Vigente hasta ${membershipEndDate}`}
+                  </p>
+                )}
+                {!hasMembership && (
+                  <p className="text-sm text-gray-500 mt-0.5">Sin membresía activa</p>
+                )}
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              {hasMembership && !isExpired && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
+                  <p className="text-2xl font-extrabold text-emerald-400">{daysLeft}</p>
+                  <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider font-semibold">días restantes</p>
+                </div>
+              )}
+              {hasMembership && isExpired && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                  <p className="text-xs font-bold text-red-400 uppercase tracking-wide">Suspendido</p>
+                </div>
+              )}
+              {!hasMembership && (
+                <div className="bg-gym-700/30 border border-gym-700/40 rounded-xl px-3 py-2">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Sin plan</p>
+                </div>
+              )}
+            </div>
+          </div>
+          {/* Progress bar */}
+          {hasMembership && !isExpired && (() => {
+            const start = user.membership_start_date ? new Date(user.membership_start_date) : new Date(user.membership_end_date)
+            const end = new Date(user.membership_end_date)
+            const total = end - start
+            const elapsed = new Date() - start
+            const pct = total > 0 ? Math.min(100, Math.max(0, (elapsed / total) * 100)) : 0
+            return (
+              <div className="mt-3">
+                <div className="h-1.5 bg-gym-700/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+                  <span>{membershipStartDate || 'Inicio'}</span>
+                  <span>{membershipEndDate}</span>
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
