@@ -98,10 +98,9 @@ REGLAS:
 
 
     const FREE_MODELS = [
-      'google/gemma-4-31b-it:free',
-      'qwen/qwen3-next-80b-a3b-instruct:free',
-      'nvidia/nemotron-3-super-120b-a12b:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
+      'google/gemini-2.0-flash-exp:free',
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free',
     ];
 
     let lastError = '';
@@ -109,7 +108,7 @@ REGLAS:
       // Short delay between retries to avoid rate limits
       if (lastError) await new Promise(r => setTimeout(r, 3000));
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000);
+      const timeout = setTimeout(() => controller.abort(), 10000);
       try {
         const response = await globalThis.fetch(OPENROUTER_API, {
           method: 'POST',
@@ -125,8 +124,8 @@ REGLAS:
         clearTimeout(timeout);
 
         if (!response.ok) {
-          lastError = await response.text();
-          console.error(`Model ${model} failed:`, response.status, lastError.substring(0, 200));
+          lastError = `${response.status}: ${(await response.text()).substring(0, 200)}`;
+          console.error(`Model ${model} failed:`, lastError);
           continue;
         }
 
