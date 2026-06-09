@@ -98,9 +98,9 @@ REGLAS:
 
 
     const FREE_MODELS = [
-      'google/gemini-2.0-flash-exp:free',
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'mistralai/mistral-7b-instruct:free',
+      'liquid/lfm-2.5-1.2b-instruct:free',
+      'poolside/laguna-xs.2:free',
+      'openrouter/free',
     ];
 
     let lastError = '';
