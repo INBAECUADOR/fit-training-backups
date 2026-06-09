@@ -251,4 +251,18 @@ router.delete('/global-exercises/:id', async (req, res) => {
   }
 });
 
+router.get('/check-env', async (req, res) => {
+  try {
+    const envKey = process.env.OPENROUTER_API_KEY;
+    res.json({ 
+      configured: !!envKey,
+      prefix: envKey ? envKey.substring(0, 10) + '...' : null,
+      length: envKey ? envKey.length : 0,
+      allKeys: Object.keys(process.env).filter(k => k.includes('API') || k.includes('KEY') || k.includes('OPENROUTER'))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
