@@ -20,7 +20,12 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'Edad, días de entrenamiento y comidas al día son requeridos' });
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
+    let apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      const db = await getDb();
+      const r = db.exec('SELECT value FROM config WHERE key = ?', ['openrouter_api_key']);
+      if (r.length && r[0].values.length) apiKey = r[0].values[0][0];
+    }
     if (!apiKey) {
       return res.status(503).json({ error: 'API no configurada' });
     }

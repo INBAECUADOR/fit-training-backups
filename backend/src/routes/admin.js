@@ -251,15 +251,24 @@ router.delete('/global-exercises/:id', async (req, res) => {
   }
 });
 
-router.get('/check-env', async (req, res) => {
+router.get('/api-key', async (req, res) => {
   try {
-    const envKey = process.env.OPENROUTER_API_KEY;
-    res.json({ 
-      configured: !!envKey,
-      prefix: envKey ? envKey.substring(0, 10) + '...' : null,
-      length: envKey ? envKey.length : 0,
-      allKeys: Object.keys(process.env).filter(k => k.includes('API') || k.includes('KEY') || k.includes('OPENROUTER'))
-    });
+    const db = await getDb();
+    const r = db.exec('SELECT value FROM config WHERE key = ?', ['openrouter_api_key']);
+    res.json({ configured: !!(process.env.OPENROUTER_API_KEY || (r.length && r[0].values.length)) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/api-key', async (req, res) => {
+  try {
+    const { key } = req.body;
+    if (!key) return res.status(400).json({ error: 'API key requerida' });
+    const db = await getDb();
+    db.run('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ['openrouter_api_key', key]);
+    saveDb();
+    res.json({ message: 'API key guardada' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
