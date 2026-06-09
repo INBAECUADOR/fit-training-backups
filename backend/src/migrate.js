@@ -6,6 +6,9 @@ async function migrate(db) {
   
   console.log('Running migrations...');
   
+  // 0. Fix admin name
+  q("UPDATE users SET name = 'Admin' WHERE id = 1 AND name != 'Admin'", []);
+  
   // 1. Fix Elio Escalona password
   const elio = qOne("SELECT id, password FROM users WHERE id = 15", []);
   if (elio) {
