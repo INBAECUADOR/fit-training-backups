@@ -33,7 +33,20 @@ router.post('/generate', async (req, res) => {
     const daysCount = Math.min(parseInt(trainingDays) || 5, 7);
     const userDays = DAYS.slice(0, daysCount);
 
-    const prompt = `Actuás como un entrenador de fisicoculturismo natural experto. Generá una rutina de entrenamiento INTENSA de AL MENOS 60-90 MINUTOS por sesión, y una dieta personalizada.
+    const splitInstruction = observations && observations.toLowerCase().includes('tren superior') ? `
+DISTRIBUCIÓN POR DÍA (basada en tu observación de 2 días tren superior + 3 piernas):
+- Lunes: PIERNA (cuádriceps, glúteos, femoral, pantorrilla)
+- Martes: TREN SUPERIOR (pecho, espalda, hombro, bíceps, tríceps)
+- Miércoles: PIERNA (enfoque en glúteos y femorales)
+- Jueves: TREN SUPERIOR (espalda, hombro, bíceps, tríceps)
+- Viernes: PIERNA (enfoque en cuádriceps y pantorrilla) + CORE` : `
+DISTRIBUCIÓN POR DÍA:
+${userDays.map((d, i) => {
+  const splits = ['PIERNA (cuádriceps, glúteos)', 'TREN SUPERIOR (pecho, espalda)', 'PIERNA (glúteos, femorales)', 'TREN SUPERIOR (hombro, bíceps, tríceps)', 'PIERNA + CORE', 'CUERPO COMPLETO', 'DESCANSO ACTIVO'];
+  return `- ${d}: ${splits[i] || 'CUERPO COMPLETO'}`;
+}).join('\n')}`;
+
+    const prompt = `Eres un entrenador personal experto en fitness y nutrición. Genera una rutina EXACTAMENTE como se especifica abajo.
 
 DATOS DEL CLIENTE:
 - Edad: ${age} años
@@ -47,60 +60,55 @@ DATOS DEL CLIENTE:
 - Alergias/intolerancias: ${allergies || 'ninguna'}
 - Condiciones/lesiones: ${conditions || 'ninguna'}
 - Equipo disponible: ${equipment || 'gimnasio completo'}
-${observations ? `\nOBSERVACIONES ESPECÍFICAS DEL ENTRENADOR:\n${observations}\n` : ''}
+${observations ? `\nOBSERVACIONES DEL ENTRENADOR:\n${observations}\n` : ''}
 
-PRINCIPIOS DE ENTRENAMIENTO (OBLIGATORIO):
-1. CADA SESIÓN debe durar 60-90 MINUTOS
-2. 8-12 EJERCICIOS por día (incluye cardio corto al inicio y abdominales al final)
-3. Incluí TIEMPO DE DESCANSO específico entre series (ej: "60s", "90s", "120s")
-4. Usá superseries y ejercicios combinados para eficiencia
-5. Priorizá ejercicios compuestos (sentadilla, press banca, dominadas, peso muerto, press militar)
-6. Variá estímulos: cambios de agarre, tempo, ángulos
-7. Las observaciones deben ser profesionales y técnicas, no motivacionales
-8. Incluí 1 ejercicio de abdominales/core al final de cada día
+${splitInstruction}
 
-Devolvé SOLO un JSON sin markdown ni texto adicional.
+REGLAS ESTRICTAS:
+1. EXACTAMENTE 8 ejercicios por día (ni más, ni menos)
+2. Cada ejercicio debe tener: "name", "series" (3-4), "reps" (8-15), "rest" ("60s","90s","120s"), "observation" (técnica)
+3. Usa nombres REALES de ejercicios de gimnasio en español: "Press Banca", "Sentadilla con Barra", "Peso Muerto", "Dominadas", "Curl con Barra", "Press Militar", "Aperturas con Mancuernas", "Remo con Barra", "Fondos en Paralelas", "Elevaciones Laterales", "Curl Femoral", "Prensa de Piernas", "Extensiones de Cuádriceps", etc.
+4. NO inventes nombres de ejercicios
+5. La dieta debe tener 5 comidas TODOS los días, NUNCA pongas "Omitido" o "Skip" en ninguna comida
+6. Incluye siempre una comida de desayuno completa con proteína y carbohidratos
+7. day_label debe ser el grupo muscular en MAYÚSCULAS (ej: "PIERNA - GLÚTEOS", "PECHO - ESPALDA", "ESPALDA - BÍCEPS")
+8. Incluye 1 ejercicio de abdominales al final de cada día
+9. Las observaciones deben ser técnicas (ej: "Mantener pecho arriba y escápulas retraídas", "No bloquear codos al final del movimiento")
 
-ESTRUCTURA EXACTA:
+RESPONDE SOLO CON UN JSON VÁLIDO, SIN MARKDOWN, SIN TEXTO ADICIONAL.
+
 {
   "routines": {
     "Lunes": {
-      "day_label": "ej: PECHO - ESPALDA",
+      "day_label": "PIERNA - CUÁDRICEPS",
       "exercises": [
-        { "name": "Press Banca", "series": 4, "reps": 10, "rest": "90s", "observation": "nota técnica sobre ejecución" }
+        { "name": "Sentadilla con Barra", "series": 4, "reps": 10, "rest": "90s", "observation": "Mantener pecho arriba, rodillas en línea con los pies, bajar hasta paralela" }
       ]
     }
   },
   "diet": {
     "Lunes": {
-      "breakfast": "Descripción con cantidades",
-      "morning_snack": "Descripción con cantidades",
-      "lunch": "Descripción con cantidades",
-      "afternoon_snack": "Descripción con cantidades",
-      "dinner": "Descripción con cantidades"
+      "breakfast": "Descripción con cantidades en gramos",
+      "morning_snack": "Descripción con cantidades en gramos",
+      "lunch": "Descripción con cantidades en gramos",
+      "afternoon_snack": "Descripción con cantidades en gramos",
+      "dinner": "Descripción con cantidades en gramos"
     }
   },
-  "dailyCalories": 2200,
-  "dailyProtein": 150,
-  "notes": "Notas generales del plan"
+  "dailyCalories": 1800,
+  "dailyProtein": 120,
+  "notes": "Nota profesional breve"
 }
 
-REGLAS:
-- Incluí SOLO los días: ${userDays.join(', ')}
-- 8-12 ejercicios por día (incluye cardio corto y abs)
-- CADA ejercicio debe tener "rest" con el tiempo de descanso (ej: "60s", "90s", "120s")
-- Todas las observaciones deben ser técnicas sobre ejecución y forma
-- Todos los 7 días para la dieta
-- Comidas con cantidades específicas en gramos
-- Calorías y proteínas realistas
-- Nota final profesional`;
+Días a incluir en routines: ${userDays.join(', ')}
+Días a incluir en diet: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo`;
 
 
 
     const FREE_MODELS = [
+      'openrouter/free',
       'liquid/lfm-2.5-1.2b-instruct:free',
       'poolside/laguna-xs.2:free',
-      'openrouter/free',
     ];
 
     let lastError = '';
