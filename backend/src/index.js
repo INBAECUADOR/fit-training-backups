@@ -40,8 +40,10 @@ app.get('*', (req, res) => {
 });
 
 async function start() {
-  await getDb();
+  const db = await getDb();
   console.log('Database initialized');
+  const { migrate } = require('./migrate');
+  await migrate(db);
   const { seed, seedGlobalExercises, seedTestUsers } = require('./seed');
   await seed();
   await seedGlobalExercises();
