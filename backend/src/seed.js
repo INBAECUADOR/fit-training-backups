@@ -16,7 +16,7 @@ async function seed() {
   const hashedPassword = bcrypt.hashSync('I5M]El', 10);
 
   db.run(`INSERT INTO users (document_id, email, name, password, role) VALUES (?, ?, ?, ?, ?)`,
-    ['1717798274', 'jose.enriquez1990@hotmail.com', 'Rafael Bernardo Enriquez Vargas', hashedPassword, 'admin']);
+    ['1717798274', 'jose.enriquez1990@hotmail.com', 'Admin', hashedPassword, 'admin']);
 
   const userId = 1;
 
