@@ -274,4 +274,41 @@ router.put('/api-key', async (req, res) => {
   }
 });
 
+// --- MOTIVATIONAL QUOTES ---
+
+router.get('/motivation', async (req, res) => {
+  try {
+    const db = await getDb();
+    const r = db.exec('SELECT id, text, author FROM motivational_quotes ORDER BY id');
+    const quotes = r.length > 0 ? r[0].values.map(row => ({ id: row[0], text: row[1], author: row[2] })) : [];
+    res.json(quotes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/motivation', async (req, res) => {
+  try {
+    const { text, author } = req.body;
+    if (!text) return res.status(400).json({ error: 'El texto es requerido' });
+    const db = await getDb();
+    db.run('INSERT INTO motivational_quotes (text, author) VALUES (?, ?)', [text, author || '']);
+    saveDb();
+    res.json({ message: 'Frase guardada' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/motivation/:id', async (req, res) => {
+  try {
+    const db = await getDb();
+    db.run('DELETE FROM motivational_quotes WHERE id = ?', [req.params.id]);
+    saveDb();
+    res.json({ message: 'Frase eliminada' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

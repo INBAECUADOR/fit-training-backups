@@ -161,6 +161,16 @@ export default function Dashboard() {
           })()}
         </div>
 
+        {/* Motivational quote */}
+        {data.motivation && (
+          <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl text-center">
+            <p className="text-sm sm:text-base text-gym-200 italic leading-relaxed">&ldquo;{data.motivation.text}&rdquo;</p>
+            {data.motivation.author && (
+              <p className="text-xs text-gym-400/70 mt-2 font-medium">— {data.motivation.author}</p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {!data.isWeekend && data.routineToday ? (
             <div className="bg-gradient-to-br from-gym-800 to-gym-900 border border-gym-700/50 rounded-2xl p-6 hover:border-gym-600 transition shadow-xl">

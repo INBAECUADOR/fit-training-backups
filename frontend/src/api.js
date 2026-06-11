@@ -151,6 +151,15 @@ export const aiGeneratePlan = (data) =>
 export const aiApprovePlan = (data) =>
   api.post('/ai/approve', data).then(r => r.data)
 
+export const adminGetMotivation = () =>
+  api.get('/admin/motivation').then(r => r.data)
+
+export const adminCreateMotivation = (data) =>
+  api.post('/admin/motivation', data).then(r => r.data)
+
+export const adminDeleteMotivation = (id) =>
+  api.delete(`/admin/motivation/${id}`).then(r => r.data)
+
 export const uploadAvatar = (file) => {
   const formData = new FormData()
   formData.append('avatar', file)

@@ -8,8 +8,9 @@ import {
   getDiet, saveDiet,
   getMeasurements, saveMeasurement, deleteMeasurement,
   aiGeneratePlan, aiApprovePlan,
+  adminGetMotivation, adminCreateMotivation, adminDeleteMotivation,
 } from '../api'
-import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw, MessageCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -85,6 +86,7 @@ export default function Admin() {
   const [measForm, setMeasForm] = useState({ weight: '', height: '', neck: '', shoulders: '', chest: '', waist: '', arms: '', legs: '', back: '', biceps: '', forearms: '', wrist: '', mid_abdomen: '', hips: '', thigh: '', mid_thigh: '', calf: '', notes: '' })
   const [measPhotos, setMeasPhotos] = useState({ photo1: null, photo2: null, photo3: null, photo4: null })
   const [measPhotoPreviews, setMeasPhotoPreviews] = useState({ photo1: '', photo2: '', photo3: '', photo4: '' })
+  const [measDate, setMeasDate] = useState(new Date().toISOString().split('T')[0])
   const [measSaving, setMeasSaving] = useState(false)
   const [measSaved, setMeasSaved] = useState(false)
 
@@ -125,6 +127,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (tab === 'catalog') loadGlobalCatalog('', '')
+    if (tab === 'motivation') adminGetMotivation().then(setQuotes).catch(() => {})
   }, [tab])
 
   // Root admin — no mostrar tabs de datos si el usuario es admin
@@ -235,6 +238,7 @@ export default function Admin() {
       const fields = ['weight','height','neck','shoulders','chest','waist','arms','legs','back','biceps','forearms','wrist','mid_abdomen','hips','thigh','mid_thigh','calf']
       fields.forEach(k => fd.append(k, parseFloat(measForm[k]) || 0))
       fd.append('notes', measForm.notes)
+      fd.append('created_at', measDate)
       if (measPhotos.photo1) fd.append('photo1', measPhotos.photo1)
       if (measPhotos.photo2) fd.append('photo2', measPhotos.photo2)
       if (measPhotos.photo3) fd.append('photo3', measPhotos.photo3)
@@ -302,6 +306,11 @@ export default function Admin() {
       setUsers(prev => prev.filter(u => u.id !== id))
     } catch {}
   }
+
+  // --- Motivation ---
+  const [quotes, setQuotes] = useState([])
+  const [quoteText, setQuoteText] = useState('')
+  const [quoteAuthor, setQuoteAuthor] = useState('')
 
   // --- AI Agent ---
   const [aiForm, setAiForm] = useState({
@@ -405,6 +414,7 @@ export default function Admin() {
             { key: 'users', label: 'Usuarios', icon: UsersIcon },
             { key: 'catalog', label: 'Catálogo', icon: BookOpen },
             { key: 'ai', label: 'Agente IA', icon: Bot },
+            { key: 'motivation', label: 'Motivación', icon: MessageCircle },
           ].filter(t => !(isRootAdmin && t.hideForAdmin)).map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm transition whitespace-nowrap ${
@@ -855,6 +865,13 @@ export default function Admin() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-400 mb-1">Fecha de la medición</label>
+                <input type="date" value={measDate}
+                  onChange={e => setMeasDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
               </div>
 
               <div className="mb-4">
@@ -1341,6 +1358,67 @@ export default function Admin() {
                 <p className="text-center text-gray-500 py-8">No se encontraron ejercicios en el catálogo</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ======== TAB: MOTIVATION ======== */}
+        {tab === 'motivation' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-gray-400 text-sm">
+                {quotes.length > 0
+                  ? `${quotes.length} frases registradas — se muestran una por día a todos los usuarios`
+                  : 'Agregá frases motivacionales para tus clientes'}
+              </p>
+            </div>
+
+            <form onSubmit={async e => {
+              e.preventDefault()
+              if (!quoteText.trim()) return
+              try {
+                await adminCreateMotivation({ text: quoteText.trim(), author: quoteAuthor.trim() })
+                setQuoteText('')
+                setQuoteAuthor('')
+                setQuotes(await adminGetMotivation())
+              } catch {}
+            }} className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-5 mb-6">
+              <h3 className="text-sm font-bold text-white mb-4">Nueva frase</h3>
+              <div className="grid grid-cols-1 gap-3 mb-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Frase *</label>
+                  <textarea value={quoteText} onChange={e => setQuoteText(e.target.value)}
+                    className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 resize-none" rows={2} placeholder="Ej: El éxito no es definitivo, el fracaso no es fatal..." />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Autor (opcional)</label>
+                  <input value={quoteAuthor} onChange={e => setQuoteAuthor(e.target.value)}
+                    className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" placeholder="Ej: Winston Churchill" />
+                </div>
+              </div>
+              <button type="submit"
+                className="px-4 py-2 bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 rounded-lg font-bold text-sm transition hover:from-emerald-400 hover:to-green-500">
+                Agregar frase
+              </button>
+            </form>
+
+            {quotes.length > 0 && (
+              <div className="space-y-2">
+                {quotes.map(q => (
+                  <div key={q.id} className="bg-gym-800/30 border border-gym-700/30 rounded-xl px-4 py-3 flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-white italic">&ldquo;{q.text}&rdquo;</p>
+                      {q.author && <p className="text-xs text-gym-400 mt-1">— {q.author}</p>}
+                    </div>
+                    <button onClick={async () => {
+                      if (!confirm('¿Eliminar esta frase?')) return
+                      try { await adminDeleteMotivation(q.id); setQuotes(await adminGetMotivation()) } catch {}
+                    }} className="p-1 text-gray-400 hover:text-gym-400 transition shrink-0" title="Eliminar">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

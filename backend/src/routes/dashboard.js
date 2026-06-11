@@ -65,7 +65,17 @@ router.get('/', authenticate, async (req, res) => {
     const recentResults = recentResult.length > 0
       ? recentResult[0].values.map(row => ({ name: row[0], weight: row[1], reps: row[2], date: row[3] })) : [];
 
-    res.json({ userName, todayName, isWeekend, routineToday, exerciseCount, latestWeight, streak, totalWorkoutDays, totalPRs, totalResults, recentResults });
+    // Daily motivational quote
+    const quotesResult = db.exec('SELECT text, author FROM motivational_quotes ORDER BY id');
+    let motivation = null;
+    if (quotesResult.length > 0) {
+      const quotes = quotesResult[0].values;
+      const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+      const idx = dayOfYear % quotes.length;
+      motivation = { text: quotes[idx][0], author: quotes[idx][1] || '' };
+    }
+
+    res.json({ userName, todayName, isWeekend, routineToday, exerciseCount, latestWeight, streak, totalWorkoutDays, totalPRs, totalResults, recentResults, motivation });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener datos del dashboard' });

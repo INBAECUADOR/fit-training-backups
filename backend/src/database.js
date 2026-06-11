@@ -122,6 +122,12 @@ async function getDb() {
     value TEXT NOT NULL
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS motivational_quotes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    text TEXT NOT NULL,
+    author TEXT DEFAULT ''
+  )`);
+
   saveDb();
   return db;
 }

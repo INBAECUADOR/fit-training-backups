@@ -65,21 +65,32 @@ router.post('/', authenticate, upload.fields([
   try {
     const { weight, chest, waist, arms, legs, notes,
             height, neck, shoulders, back, biceps, forearms, wrist,
-            mid_abdomen, hips, thigh, mid_thigh, calf } = req.body;
+            mid_abdomen, hips, thigh, mid_thigh, calf, created_at } = req.body;
     const db = await getDb();
     const uid = await targetUser(req);
     const photo1 = req.files?.photo1 ? '/uploads/measurements/' + req.files.photo1[0].filename : '';
     const photo2 = req.files?.photo2 ? '/uploads/measurements/' + req.files.photo2[0].filename : '';
     const photo3 = req.files?.photo3 ? '/uploads/measurements/' + req.files.photo3[0].filename : '';
     const photo4 = req.files?.photo4 ? '/uploads/measurements/' + req.files.photo4[0].filename : '';
-    db.run(`INSERT INTO measurements (user_id, weight, chest, waist, arms, legs, notes, photo1, photo2, photo3, photo4,
-            height, neck, shoulders, back, biceps, forearms, wrist, mid_abdomen, hips, thigh, mid_thigh, calf)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [uid, weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '',
-       photo1, photo2, photo3, photo4,
-       height || 0, neck || 0, shoulders || 0, back || 0, biceps || 0,
-       forearms || 0, wrist || 0, mid_abdomen || 0, hips || 0,
-       thigh || 0, mid_thigh || 0, calf || 0]);
+    if (created_at) {
+      db.run(`INSERT INTO measurements (user_id, weight, chest, waist, arms, legs, notes, photo1, photo2, photo3, photo4,
+              height, neck, shoulders, back, biceps, forearms, wrist, mid_abdomen, hips, thigh, mid_thigh, calf, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uid, weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '',
+         photo1, photo2, photo3, photo4,
+         height || 0, neck || 0, shoulders || 0, back || 0, biceps || 0,
+         forearms || 0, wrist || 0, mid_abdomen || 0, hips || 0,
+         thigh || 0, mid_thigh || 0, calf || 0, created_at]);
+    } else {
+      db.run(`INSERT INTO measurements (user_id, weight, chest, waist, arms, legs, notes, photo1, photo2, photo3, photo4,
+              height, neck, shoulders, back, biceps, forearms, wrist, mid_abdomen, hips, thigh, mid_thigh, calf)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uid, weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '',
+         photo1, photo2, photo3, photo4,
+         height || 0, neck || 0, shoulders || 0, back || 0, biceps || 0,
+         forearms || 0, wrist || 0, mid_abdomen || 0, hips || 0,
+         thigh || 0, mid_thigh || 0, calf || 0]);
+    }
     saveDb();
     res.json({ message: 'Medidas guardadas' });
   } catch (err) {
