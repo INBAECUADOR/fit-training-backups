@@ -234,6 +234,57 @@ async function migrate(db) {
   q("UPDATE exercises SET gif_url = NULL WHERE gif_url = ''", []);
   q("UPDATE global_exercises SET gif_url = NULL WHERE gif_url = ''", []);
   
+  // 8. Seed motivational quotes if empty
+  const quoteCount = qOne("SELECT COUNT(*) FROM motivational_quotes");
+  if (!quoteCount || quoteCount[0] === 0) {
+    const quotes = [
+      ["El éxito no es definitivo, el fracaso no es fatal: lo que cuenta es el valor para continuar.", "Winston Churchill"],
+      ["No cuentes los días, haz que los días cuenten.", "Muhammad Ali"],
+      ["El dolor que sientes hoy será la fuerza que tendrás mañana.", null],
+      ["Los límites solo existen en tu mente. Supéralos.", null],
+      ["El único mal entrenamiento es el que no hiciste.", null],
+      ["Si sueñas con un cuerpo de playa, no esperes al verano para empezar.", null],
+      ["No se trata de tener tiempo, se trata de hacer tiempo.", null],
+      ["Las excusas no queman calorías.", null],
+      ["Cada repetición te acerca a tu mejor versión.", null],
+      ["La disciplina es el puente entre tus metas y tus logros.", "Jim Rohn"],
+      ["El sacrificio de hoy es el éxito de mañana.", null],
+      ["Tu único límite es tú mismo. Rompélo.", null],
+      ["No te rindas. El principio siempre es lo más difícil.", null],
+      ["El mejor proyecto en el que puedes trabajar eres tú mismo.", null],
+      ["Sudor, esfuerzo y dedicación: la fórmula del éxito.", null],
+      ["No esperes a estar listo, empieza y vuélvete listo en el camino.", null],
+      ["El cuerpo logra lo que la mente cree.", null],
+      ["Los campeones no se hacen en el gimnasio, se hacen de lo que llevan dentro.", null],
+      ["Diez minutos de esfuerzo extra marcan la diferencia.", null],
+      ["Hoy puede ser el día en que empieces a cambiar tu vida.", null],
+      ["El orgullo de llegar lejos siempre supera el dolor del esfuerzo.", null],
+      ["No dejes para mañana el cuerpo que puedes construir hoy.", null],
+      ["La motivación te activa, la disciplina te mantiene.", null],
+      ["El gimnasio no juzga, transforma.", null],
+      ["Caer está permitido, levantarse es obligatorio.", null],
+      ["Tu cuerpo escucha todo lo que tu mente dice. Háblale con fuerza.", null],
+      ["Más peso, más reps, más constancia: mejores resultados.", null],
+      ["El cambio no ocurre de la noche a la mañana, pero ocurre.", null],
+      ["Invertir en tu salud es la mejor inversión de tu vida.", null],
+      ["No necesitas ser extremo, necesitas ser constante.", null],
+      ["El secreto está en aparecer, incluso cuando no tienes ganas.", null],
+      ["Tu mayor rival está en el espejo. Superáte cada día.", null],
+      ["La grasa no sabe lo fuerte que eres hasta que empiezas.", null],
+      ["No busques resultados inmediatos, busca hábitos duraderos.", null],
+      ["Una hora en el gimnasio son solo 4% de tu día. Vale la pena.", null],
+      ["El dolor del ejercicio se olvida, la gloria del resultado permanece.", null],
+      ["La única persona con la que debes competir es la que fuiste ayer.", null],
+      ["Respira hondo, aprieta los dientes y dale todo.", null],
+      ["Si puedes imaginarlo, puedes lograrlo. Si puedes soñarlo, puedes serlo.", "William Arthur Ward"],
+      ["El éxito es la suma de pequeños esfuerzos repetidos día tras día.", "Robert Collier"],
+    ];
+    for (const [text, author] of quotes) {
+      q("INSERT INTO motivational_quotes (text, author) VALUES (?, ?)", [text, author || null]);
+    }
+    console.log('Seeded', quotes.length, 'motivational quotes');
+  }
+  
   console.log('Migration complete');
 }
 
