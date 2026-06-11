@@ -64,6 +64,15 @@ export const getPRs = () =>
 export const getSuggestion = (exerciseId) =>
   api.get(`/routines/suggest/${exerciseId}`).then(r => r.data)
 
+export const getAlternatives = (exerciseId) =>
+  api.get(`/routines/alternatives/${exerciseId}`).then(r => r.data)
+
+export const getBodyComposition = () =>
+  api.get('/measurements/composition').then(r => r.data)
+
+export const getMeasurementsHistory = () =>
+  api.get('/measurements/history').then(r => r.data)
+
 export const getDiet = (params) =>
   api.get('/diet', { params }).then(r => r.data)
 

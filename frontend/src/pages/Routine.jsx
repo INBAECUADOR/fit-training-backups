@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { getExercises, getRoutines } from '../api'
+import React, { useState, useEffect, useCallback } from 'react'
+import { getExercises, getRoutines, getAlternatives } from '../api'
 import ExerciseCard from '../components/ExerciseCard'
 import ResultModal from '../components/ResultModal'
 import ExerciseProgress from '../components/ExerciseProgress'
 import RestTimer from '../components/RestTimer'
 import Navbar from '../components/Navbar'
+import { Dumbbell, RefreshCw } from 'lucide-react'
 
 const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
 
@@ -17,6 +18,9 @@ export default function Routine() {
   const [progressExercise, setProgressExercise] = useState(null)
   const [showTimer, setShowTimer] = useState(false)
   const [restTimerKey, setRestTimerKey] = useState(0)
+  const [autoRestTime, setAutoRestTime] = useState(null)
+  const [alternatives, setAlternatives] = useState({})
+  const [altLoading, setAltLoading] = useState({})
 
   useEffect(() => {
     getRoutines().then(setRoutines).catch(() => {})
@@ -32,10 +36,21 @@ export default function Routine() {
 
   const currentRoutine = routines.find(r => r.day_name === selectedDay)
 
-  const handleSaved = () => {
+  const handleSaved = (restSeconds) => {
+    setAutoRestTime(restSeconds || 60)
     setShowTimer(true)
     setRestTimerKey(prev => prev + 1)
   }
+
+  const loadAlternatives = useCallback(async (exId) => {
+    setAltLoading(p => ({ ...p, [exId]: true }))
+    try {
+      const data = await getAlternatives(exId)
+      setAlternatives(p => ({ ...p, [exId]: data }))
+    } catch {} finally {
+      setAltLoading(p => ({ ...p, [exId]: false }))
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gym-900">
@@ -73,7 +88,7 @@ export default function Routine() {
 
         {showTimer && (
           <div className="mb-6 max-w-xs">
-            <RestTimer key={restTimerKey} />
+            <RestTimer key={restTimerKey} autoStart={autoRestTime} onFinish={() => setShowTimer(false)} />
           </div>
         )}
 
@@ -89,6 +104,9 @@ export default function Routine() {
                 exercise={ex}
                 onRegister={() => setSelectedExercise(ex)}
                 onProgress={() => setProgressExercise(ex)}
+                alternatives={alternatives[ex.id]}
+                altLoading={altLoading[ex.id]}
+                onLoadAlternatives={() => loadAlternatives(ex.id)}
               />
             ))}
           </div>
@@ -98,7 +116,7 @@ export default function Routine() {
           <ResultModal
             exercise={selectedExercise}
             onClose={() => setSelectedExercise(null)}
-            onSaved={handleSaved}
+            onSaved={(rest) => handleSaved(rest)}
           />
         )}
 

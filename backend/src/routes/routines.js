@@ -21,9 +21,12 @@ router.get('/:dayName', authenticate, async (req, res) => {
   try {
     const db = await getDb();
     const result = db.exec(`
-      SELECT e.id, e.name, e.series, e.reps, e.observation, e.gif_url, e.rest
+      SELECT e.id, e.name, e.series, e.reps, e.observation,
+        COALESCE(e.gif_url, ge.gif_url, '') as gif_url,
+        e.rest
       FROM exercises e
       JOIN routines r ON e.routine_id = r.id
+      LEFT JOIN global_exercises ge ON e.global_exercise_id = ge.id
       WHERE r.user_id = ? AND r.day_name = ?
       ORDER BY e.id
     `, [req.userId, req.params.dayName]);
@@ -145,6 +148,34 @@ router.get('/suggest/:exerciseId', authenticate, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al generar sugerencia' });
+  }
+});
+
+// Alternative exercises when no GIF or similar
+router.get('/alternatives/:exerciseId', authenticate, async (req, res) => {
+  try {
+    const db = await getDb();
+    const exResult = db.exec('SELECT e.name, e.global_exercise_id, ge.muscle_group, ge.name_es FROM exercises e LEFT JOIN global_exercises ge ON e.global_exercise_id = ge.id WHERE e.id = ?', [req.params.exerciseId]);
+    if (exResult.length === 0 || exResult[0].values.length === 0) {
+      return res.json([]);
+    }
+    const [exName, globalId, muscleGroup, nameEs] = exResult[0].values[0];
+
+    if (!muscleGroup) return res.json([]);
+
+    const altResult = db.exec(`
+      SELECT id, name, name_es, gif_url, muscle_group FROM global_exercises
+      WHERE muscle_group = ? AND id != ?
+      ORDER BY RANDOM() LIMIT 4
+    `, [muscleGroup, globalId || 0]);
+    const alternatives = altResult.length > 0 ? altResult[0].values.map(row => ({
+      id: row[0], name: row[1], name_es: row[2],
+      gifUrl: row[3] ? (row[3].includes('://') ? row[3] : `https://adminweb.blob.core.windows.net/gym1/${row[3]}.gif`) : '',
+      muscleGroup: row[4],
+    })) : [];
+    res.json(alternatives);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

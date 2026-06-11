@@ -129,6 +129,81 @@ router.post('/weight', authenticate, async (req, res) => {
   }
 });
 
+// Body composition estimation (Navy method)
+router.get('/composition', authenticate, async (req, res) => {
+  try {
+    const db = await getDb();
+    const uid = await targetUser(req);
+    const result = db.exec(`
+      SELECT weight, height, neck, waist, hips, created_at
+      FROM measurements WHERE user_id = ? AND weight > 0
+      ORDER BY created_at DESC LIMIT 1
+    `, [uid]);
+    if (result.length === 0 || result[0].values.length === 0) {
+      return res.json({ bf: null, bfCategory: '', leanMass: null, fatMass: null });
+    }
+    const [weight, height, neck, waist, hips] = result[0].values[0];
+    if (!height || !neck || !waist) {
+      return res.json({ bf: null, bfCategory: '', leanMass: null, fatMass: null });
+    }
+
+    const userResult = db.exec('SELECT gender FROM users WHERE id = ?', [uid]);
+    const gender = (userResult.length > 0 ? userResult[0].values[0][0] || '' : '').toLowerCase();
+
+    let bf = 0;
+    if (gender === 'femenino' || gender === 'female') {
+      // Navy method for women
+      bf = 163.205 * Math.log10(waist + hips - neck) - 97.684 * Math.log10(height) - 78.387;
+    } else {
+      // Navy method for men
+      bf = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+    }
+    bf = Math.max(3, Math.min(60, Math.round(bf * 10) / 10));
+
+    const fatMass = Math.round((weight * bf / 100) * 10) / 10;
+    const leanMass = Math.round((weight - fatMass) * 10) / 10;
+
+    let bfCategory = '';
+    if (gender === 'femenino' || gender === 'female') {
+      if (bf < 14) bfCategory = 'Atleta';
+      else if (bf < 21) bfCategory = 'Saludable';
+      else if (bf < 28) bfCategory = 'Aceptable';
+      else if (bf < 35) bfCategory = 'Elevado';
+      else bfCategory = 'Muy elevado';
+    } else {
+      if (bf < 6) bfCategory = 'Atleta';
+      else if (bf < 14) bfCategory = 'Saludable';
+      else if (bf < 18) bfCategory = 'Aceptable';
+      else if (bf < 25) bfCategory = 'Elevado';
+      else bfCategory = 'Muy elevado';
+    }
+
+    res.json({ bf, bfCategory, leanMass, fatMass, weight, height, neck, waist, hips, gender, date: result[0].values[0][4] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Evolution history (for charts)
+router.get('/history', authenticate, async (req, res) => {
+  try {
+    const db = await getDb();
+    const uid = await targetUser(req);
+    const result = db.exec(`
+      SELECT weight, chest, waist, arms, legs, created_at
+      FROM measurements WHERE user_id = ? AND weight > 0
+      ORDER BY created_at ASC
+    `, [uid]);
+    const rows = result.length > 0 ? result[0].values.map(r => ({
+      weight: r[0], chest: r[1], waist: r[2], arms: r[3], legs: r[4],
+      date: r[5]
+    })) : [];
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const db = await getDb();

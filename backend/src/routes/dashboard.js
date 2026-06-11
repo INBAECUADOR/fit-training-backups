@@ -75,7 +75,36 @@ router.get('/', authenticate, async (req, res) => {
       motivation = { text: quotes[idx][0], author: quotes[idx][1] || '' };
     }
 
-    res.json({ userName, todayName, isWeekend, routineToday, exerciseCount, latestWeight, streak, totalWorkoutDays, totalPRs, totalResults, recentResults, motivation });
+    // Calendar — last 30 days workout activity
+    const calResult = db.exec(`
+      SELECT DISTINCT DATE(created_at) as d FROM exercise_results
+      WHERE user_id = ? AND created_at >= DATE('now', '-30 days')
+      ORDER BY d
+    `, [userId]);
+    const workoutDays = calResult.length > 0 ? calResult[0].values.map(r => r[0]) : [];
+
+    // Muscle recovery — last 3 routine days
+    const recResult = db.exec(`
+      SELECT e.name, r.day_name, ge.muscle_group
+      FROM exercise_results er
+      JOIN exercises e ON er.exercise_id = e.id
+      JOIN routines r ON e.routine_id = r.id
+      LEFT JOIN global_exercises ge ON e.global_exercise_id = ge.id
+      WHERE er.user_id = ? AND er.created_at >= DATE('now', '-7 days')
+      ORDER BY er.created_at DESC
+    `, [userId]);
+    const workedMuscles = [];
+    const seenDays = new Set();
+    if (recResult.length > 0) {
+      for (const row of recResult[0].values) {
+        if (row[2] && !seenDays.has(row[1])) {
+          workedMuscles.push({ day: row[1], muscle: row[2] });
+          seenDays.add(row[1]);
+        }
+      }
+    }
+
+    res.json({ userName, todayName, isWeekend, routineToday, exerciseCount, latestWeight, streak, totalWorkoutDays, totalPRs, totalResults, recentResults, motivation, workoutDays, workedMuscles });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener datos del dashboard' });

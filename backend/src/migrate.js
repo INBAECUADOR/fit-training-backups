@@ -20,7 +20,23 @@ async function migrate(db) {
     }
   }
   
-  // 2. Add missing catalog exercises (only if not exist)
+  // 2. GIF URLs for catalog exercises (from exercisedb.dev)
+  const gifUrls = {
+    1052: 'https://static.exercisedb.dev/media/rjiM4L3.gif', 1055: 'https://static.exercisedb.dev/media/a8VDgLw.gif',
+    1057: 'https://static.exercisedb.dev/media/EIeI8Vf.gif', 1058: 'https://static.exercisedb.dev/media/SpYC0Kp.gif',
+    1059: 'https://static.exercisedb.dev/media/0CXGHya.gif', 1060: 'https://static.exercisedb.dev/media/2NpxjC1.gif',
+    1061: 'https://static.exercisedb.dev/media/DhMl549.gif', 1062: 'https://static.exercisedb.dev/media/10Z2DXU.gif',
+    1063: 'https://static.exercisedb.dev/media/Ul5OFSV.gif', 1064: 'https://static.exercisedb.dev/media/CmEr4pM.gif',
+    1065: 'https://static.exercisedb.dev/media/6cKQC5E.gif', 1066: 'https://static.exercisedb.dev/media/LEprlgG.gif',
+    1067: 'https://static.exercisedb.dev/media/9tvVVM9.gif', 1068: 'https://static.exercisedb.dev/media/f1jf47L.gif',
+    1069: 'https://static.exercisedb.dev/media/f1jf47L.gif', 1070: 'https://static.exercisedb.dev/media/DsgkuIt.gif',
+    1071: 'https://static.exercisedb.dev/media/1xHyxys.gif', 1073: 'https://static.exercisedb.dev/media/4f8RXP8.gif',
+    1074: 'https://static.exercisedb.dev/media/A3P4O0R.gif', 1075: 'https://static.exercisedb.dev/media/hBGWILP.gif',
+    1076: 'https://static.exercisedb.dev/media/NN8nSNT.gif', 1083: 'https://static.exercisedb.dev/media/0S75mYG.gif',
+    1084: 'https://static.exercisedb.dev/media/0jp9Rlz.gif', 1085: 'https://static.exercisedb.dev/media/1V1gj1u.gif',
+    1088: 'https://static.exercisedb.dev/media/17lJ1kr.gif',
+  };
+
   const catalogToAdd = [
     [1052, 'treadmill (cardio)', 'Cinta Caminadora (Cardio)', 'cardio', 'Caminadora o treadmill para cardio'],
     [1053, 'treadmill jogging (cardio)', 'Trote en Cinta (Cardio)', 'cardio', 'Trote ligero en cinta caminadora'],
@@ -66,11 +82,20 @@ async function migrate(db) {
   for (const [id, name, nameEs, mg, desc] of catalogToAdd) {
     const existing = qOne("SELECT id FROM global_exercises WHERE id = ?", [id]);
     if (!existing) {
-      q("INSERT INTO global_exercises (id, name, name_es, muscle_group, description) VALUES (?, ?, ?, ?, ?)", [id, name, nameEs, mg, desc]);
+      const gif = gifUrls[id] || '';
+      q("INSERT INTO global_exercises (id, name, name_es, muscle_group, description, gif_url) VALUES (?, ?, ?, ?, ?, ?)", [id, name, nameEs, mg, desc, gif]);
       added++;
     }
   }
   if (added) console.log('Added', added, 'new catalog exercises');
+
+  // 2b. Update existing catalog exercises with missing gif_url
+  for (const [id, url] of Object.entries(gifUrls)) {
+    const r = qOne("SELECT gif_url FROM global_exercises WHERE id = ? AND (gif_url IS NULL OR gif_url = '')", [parseInt(id)]);
+    if (r) {
+      q("UPDATE global_exercises SET gif_url = ? WHERE id = ?", [url, parseInt(id)]);
+    }
+  }
   
   // 3. Fix exercise matches for all unmatched exercises
   const fixMap = {

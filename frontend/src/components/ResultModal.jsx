@@ -29,7 +29,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
         time: time || '',
         observation: observation || '',
       })
-      if (onSaved) onSaved()
+      if (onSaved) onSaved(exercise.rest ? parseInt(exercise.rest) : 60)
       onClose()
     } catch {} finally {
       setSaving(false)

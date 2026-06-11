@@ -3,28 +3,39 @@ import { Play, Pause, RotateCcw, Clock } from 'lucide-react'
 
 const PRESETS = [30, 60, 90, 120, 180]
 
-export default function RestTimer() {
+export default function RestTimer({ autoStart, onFinish }) {
   const [time, setTime] = useState(60)
   const [remaining, setRemaining] = useState(0)
   const [running, setRunning] = useState(false)
   const intervalRef = useRef(null)
+  const startedRef = useRef(false)
+
+  useEffect(() => {
+    if (autoStart && !startedRef.current) {
+      startedRef.current = true
+      const seconds = parseInt(autoStart) || 60
+      setTime(seconds)
+      setRemaining(seconds)
+      setRunning(true)
+    }
+  }, [autoStart])
 
   useEffect(() => {
     if (running && remaining > 0) {
       intervalRef.current = setInterval(() => {
         setRemaining(prev => {
-          if (prev <= 1) { setRunning(false); return 0 }
+          if (prev <= 1) { setRunning(false); if (onFinish) onFinish(); return 0 }
           return prev - 1
         })
       }, 1000)
     }
     return () => clearInterval(intervalRef.current)
-  }, [running, remaining])
+  }, [running, remaining, onFinish])
 
   const start = (s) => { setTime(s); setRemaining(s); setRunning(true) }
   const pause = () => setRunning(false)
   const resume = () => setRunning(true)
-  const reset = () => { setRunning(false); setRemaining(0) }
+  const reset = () => { setRunning(false); setRemaining(0); startedRef.current = false }
 
   const format = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
