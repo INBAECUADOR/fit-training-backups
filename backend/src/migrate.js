@@ -230,6 +230,10 @@ async function migrate(db) {
   const gifFixed = qOne("SELECT changes()");
   if (gifFixed && gifFixed[0] > 0) console.log('Copied', gifFixed[0], 'GIF URLs from catalog');
   
+  // 7. Normalize empty gif_url strings to NULL for COALESCE compatibility
+  q("UPDATE exercises SET gif_url = NULL WHERE gif_url = ''", []);
+  q("UPDATE global_exercises SET gif_url = NULL WHERE gif_url = ''", []);
+  
   console.log('Migration complete');
 }
 

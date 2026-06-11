@@ -22,7 +22,7 @@ router.get('/:dayName', authenticate, async (req, res) => {
     const db = await getDb();
     const result = db.exec(`
       SELECT e.id, e.name, e.series, e.reps, e.observation,
-        COALESCE(e.gif_url, ge.gif_url, '') as gif_url,
+        COALESCE(NULLIF(e.gif_url, ''), NULLIF(ge.gif_url, ''), '') as gif_url,
         e.rest
       FROM exercises e
       JOIN routines r ON e.routine_id = r.id
