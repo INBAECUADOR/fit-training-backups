@@ -77,16 +77,6 @@ const sections = [
     ],
   },
   {
-    id: 'ia', icon: Zap,
-    title: 'Agente IA (Solo Admin)',
-    items: [
-      [User, 'Completa los datos del cliente: edad, peso, altura, género, objetivo, experiencia, días de entreno, comidas/día, equipo, alergias, lesiones.'],
-      [Dumbbell, 'La IA genera un plan personalizado de rutina + dieta para toda la semana.'],
-      [FileText, 'Vista previa: revisa el plan antes de asignarlo. Muestra desglose día por día con series x reps.'],
-      [Zap, 'Asignar Plan: reemplaza la rutina y dieta actual del usuario con el plan generado.'],
-    ],
-  },
-  {
     id: 'admin', icon: Shield,
     title: 'Panel de Administración (Admin)',
     items: [
@@ -95,7 +85,7 @@ const sections = [
       [User, 'Medidas: registra y edita medidas corporales con fotos de cualquier usuario.'],
       [User, 'Usuarios: crea, edita y elimina usuarios. Al crear se generan 5 slots de rutina vacíos.'],
       [BookOpen, 'Catálogo Global: administra los 1000+ ejercicios con nombres español, grupos musculares y GIFs.'],
-      [Zap, 'Agente IA: genera planes personalizados (igual que la página Agente IA).'],
+      [Zap, 'Agente IA: genera planes personalizados con IA (rutina + dieta).'],
       [FileText, 'Motivación: administra las frases motivacionales que ven todos los usuarios (una por día).'],
     ],
   },

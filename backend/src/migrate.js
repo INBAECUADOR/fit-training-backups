@@ -178,6 +178,7 @@ async function migrate(db) {
     'Prensa de Piernas': 1062, 'Cinta Elíptica (Intervalos)': 1054,
     'Dominadas Asistidas o Libres': 1086, 'Aperturas con Mancuernas': 1078,
     'Curl Bíceps Alterno': 338,
+    'SENTADILLA BÚLGARA': 660, 'STEP-UP CON MANCUERNAS': 943, 'SENTADILLA BICICLETA': 482,
   };
   
   let fixed = 0;
@@ -209,7 +210,7 @@ async function migrate(db) {
     'ABDUCTORES EN MÁQUINA': 769, 'ABDUCTORES EN POLEA': 764,
     'ADUCTORES EN MÁQUINA': 778, 'ADUCTORES EN POLEA': 778,
     'BICICLETA ESTÁTICA (CALENTAMIENTO)': 1055,
-    'STEP-UP CON MANCUERNAS': null,
+    'STEP-UP CON MANCUERNAS': 943,
     'ZANCADAS LATERALES': 572,
     'PESO MUERTO RUMANO CON BARRA': 513,
     'PESO MUERTO RUMANO CON MANCUERNAS': 507,
@@ -223,8 +224,8 @@ async function migrate(db) {
     'SENTADILLA LIBRE CON BARRA': 1061,
     'PLANCHA ABDOMINAL': 614,
     'RUEDA ABDOMINAL': 1090,
-    'SENTADILLA BÚLGARA': null,
-    'SENTADILLA BICICLETA': null,
+    'SENTADILLA BÚLGARA': 660,
+    'SENTADILLA BICICLETA': 482,
     'DOMINADAS (PRUEBA)': null,
   };
   
