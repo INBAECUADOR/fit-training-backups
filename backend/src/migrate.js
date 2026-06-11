@@ -22,19 +22,44 @@ async function migrate(db) {
   
   // 2. GIF URLs for catalog exercises (from exercisedb.dev)
   const gifUrls = {
-    1052: 'https://static.exercisedb.dev/media/rjiM4L3.gif', 1055: 'https://static.exercisedb.dev/media/a8VDgLw.gif',
-    1057: 'https://static.exercisedb.dev/media/EIeI8Vf.gif', 1058: 'https://static.exercisedb.dev/media/SpYC0Kp.gif',
-    1059: 'https://static.exercisedb.dev/media/0CXGHya.gif', 1060: 'https://static.exercisedb.dev/media/2NpxjC1.gif',
-    1061: 'https://static.exercisedb.dev/media/DhMl549.gif', 1062: 'https://static.exercisedb.dev/media/10Z2DXU.gif',
-    1063: 'https://static.exercisedb.dev/media/Ul5OFSV.gif', 1064: 'https://static.exercisedb.dev/media/CmEr4pM.gif',
-    1065: 'https://static.exercisedb.dev/media/6cKQC5E.gif', 1066: 'https://static.exercisedb.dev/media/LEprlgG.gif',
-    1067: 'https://static.exercisedb.dev/media/9tvVVM9.gif', 1068: 'https://static.exercisedb.dev/media/f1jf47L.gif',
-    1069: 'https://static.exercisedb.dev/media/f1jf47L.gif', 1070: 'https://static.exercisedb.dev/media/DsgkuIt.gif',
-    1071: 'https://static.exercisedb.dev/media/1xHyxys.gif', 1073: 'https://static.exercisedb.dev/media/4f8RXP8.gif',
-    1074: 'https://static.exercisedb.dev/media/A3P4O0R.gif', 1075: 'https://static.exercisedb.dev/media/hBGWILP.gif',
-    1076: 'https://static.exercisedb.dev/media/NN8nSNT.gif', 1083: 'https://static.exercisedb.dev/media/0S75mYG.gif',
-    1084: 'https://static.exercisedb.dev/media/0jp9Rlz.gif', 1085: 'https://static.exercisedb.dev/media/1V1gj1u.gif',
+    1052: 'https://static.exercisedb.dev/media/rjiM4L3.gif',
+    1053: 'https://static.exercisedb.dev/media/rjiM4L3.gif',
+    1054: 'https://static.exercisedb.dev/media/rjtuP6X.gif',
+    1055: 'https://static.exercisedb.dev/media/a8VDgLw.gif',
+    1056: 'https://static.exercisedb.dev/media/CcWEoWV.gif',
+    1057: 'https://static.exercisedb.dev/media/EIeI8Vf.gif',
+    1058: 'https://static.exercisedb.dev/media/SpYC0Kp.gif',
+    1059: 'https://static.exercisedb.dev/media/0CXGHya.gif',
+    1060: 'https://static.exercisedb.dev/media/2NpxjC1.gif',
+    1061: 'https://static.exercisedb.dev/media/DhMl549.gif',
+    1062: 'https://static.exercisedb.dev/media/10Z2DXU.gif',
+    1063: 'https://static.exercisedb.dev/media/Ul5OFSV.gif',
+    1064: 'https://static.exercisedb.dev/media/CmEr4pM.gif',
+    1065: 'https://static.exercisedb.dev/media/6cKQC5E.gif',
+    1066: 'https://static.exercisedb.dev/media/LEprlgG.gif',
+    1067: 'https://static.exercisedb.dev/media/9tvVVM9.gif',
+    1068: 'https://static.exercisedb.dev/media/67n3r98.gif',
+    1069: 'https://static.exercisedb.dev/media/f1jf47L.gif',
+    1070: 'https://static.exercisedb.dev/media/aTNKZiC.gif',
+    1071: 'https://static.exercisedb.dev/media/1xHyxys.gif',
+    1072: 'https://static.exercisedb.dev/media/17lJ1kr.gif',
+    1073: 'https://static.exercisedb.dev/media/4f8RXP8.gif',
+    1074: 'https://static.exercisedb.dev/media/A3P4O0R.gif',
+    1075: 'https://static.exercisedb.dev/media/hBGWILP.gif',
+    1076: 'https://static.exercisedb.dev/media/NN8nSNT.gif',
+    1077: 'https://static.exercisedb.dev/media/0CXGHya.gif',
+    1078: 'https://static.exercisedb.dev/media/FVmZVhk.gif',
+    1079: 'https://static.exercisedb.dev/media/8eqjhOl.gif',
+    1080: 'https://static.exercisedb.dev/media/eZyBC3j.gif',
+    1081: 'https://static.exercisedb.dev/media/jHAnWmT.gif',
+    1082: 'https://static.exercisedb.dev/media/C0MA9bC.gif',
+    1083: 'https://static.exercisedb.dev/media/0S75mYG.gif',
+    1084: 'https://static.exercisedb.dev/media/0jp9Rlz.gif',
+    1085: 'https://static.exercisedb.dev/media/1V1gj1u.gif',
+    1086: 'https://static.exercisedb.dev/media/5ipN0iE.gif',
+    1087: 'https://static.exercisedb.dev/media/qKBpF7I.gif',
     1088: 'https://static.exercisedb.dev/media/17lJ1kr.gif',
+    1089: 'https://static.exercisedb.dev/media/HEJ6DIX.gif',
   };
 
   const catalogToAdd = [
@@ -90,12 +115,25 @@ async function migrate(db) {
   if (added) console.log('Added', added, 'new catalog exercises');
 
   // 2b. Update existing catalog exercises with missing gif_url
-  for (const [id, url] of Object.entries(gifUrls)) {
-    const r = qOne("SELECT gif_url FROM global_exercises WHERE id = ? AND (gif_url IS NULL OR gif_url = '')", [parseInt(id)]);
-    if (r) {
-      q("UPDATE global_exercises SET gif_url = ? WHERE id = ?", [url, parseInt(id)]);
-    }
+  // (force update regardless of current value, in case previous migration left empty strings)
+  const gifUpdate = [
+    [1052, 'rjiM4L3'], [1053, 'rjiM4L3'], [1054, 'rjtuP6X'], [1055, 'a8VDgLw'], [1056, 'CcWEoWV'],
+    [1057, 'EIeI8Vf'], [1058, 'SpYC0Kp'], [1059, '0CXGHya'],
+    [1060, '2NpxjC1'], [1061, 'DhMl549'], [1062, '10Z2DXU'],
+    [1063, 'Ul5OFSV'], [1064, 'CmEr4pM'], [1065, '6cKQC5E'],
+    [1066, 'LEprlgG'], [1067, '9tvVVM9'], [1068, '67n3r98'],
+    [1069, 'f1jf47L'], [1070, 'aTNKZiC'], [1071, '1xHyxys'],
+    [1072, '17lJ1kr'], [1073, '4f8RXP8'], [1074, 'A3P4O0R'],
+    [1075, 'hBGWILP'], [1076, 'NN8nSNT'], [1077, '0CXGHya'],
+    [1078, 'FVmZVhk'], [1079, '8eqjhOl'], [1080, 'eZyBC3j'],
+    [1081, 'jHAnWmT'], [1082, 'C0MA9bC'], [1083, '0S75mYG'],
+    [1084, '0jp9Rlz'], [1085, '1V1gj1u'], [1086, '5ipN0iE'],
+    [1087, 'qKBpF7I'], [1088, '17lJ1kr'], [1089, 'HEJ6DIX'],
+  ];
+  for (const [id, exId] of gifUpdate) {
+    q("UPDATE global_exercises SET gif_url = ? WHERE id = ?", [`https://static.exercisedb.dev/media/${exId}.gif`, id]);
   }
+  console.log('Updated', gifUpdate.length, 'global_exercise GIF URLs');
   
   // 3. Fix exercise matches for all unmatched exercises
   const fixMap = {
