@@ -7,3 +7,4 @@ uploads/
 ngrok.exe
 *.bat
 commit_msg.txt
+_check_*.js
