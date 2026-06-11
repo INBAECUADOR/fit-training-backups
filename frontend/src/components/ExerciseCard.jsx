@@ -55,8 +55,10 @@ export default function ExerciseCard({ exercise, onRegister, onProgress, alterna
             <p className="text-[10px] text-gym-300 uppercase tracking-wider font-bold mb-2">Alternativas similares</p>
             <div className="grid grid-cols-2 gap-2">
               {alternatives.map(a => (
-                <div key={a.id} className="bg-gym-800/50 rounded-lg p-2 text-center">
+                <div key={a.id} className="bg-gym-800/50 rounded-lg p-2 text-center cursor-pointer hover:bg-gym-700/50 transition" onClick={() => { if (a.gifUrl) setExpandedGif(a.gifUrl) }}>
                   <p className="text-xs text-white truncate font-medium">{a.name_es || a.name}</p>
+                  {a.gifUrl && <p className="text-[9px] text-gym-400 mt-1">Click para ver GIF</p>}
+                  {!a.gifUrl && <p className="text-[9px] text-gray-600 mt-1">Sin imagen</p>}
                 </div>
               ))}
             </div>

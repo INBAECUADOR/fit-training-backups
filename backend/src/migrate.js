@@ -59,8 +59,9 @@ async function migrate(db) {
     1086: 'https://static.exercisedb.dev/media/5ipN0iE.gif',
     1087: 'https://static.exercisedb.dev/media/qKBpF7I.gif',
     1088: 'https://static.exercisedb.dev/media/17lJ1kr.gif',
-    1089: 'https://static.exercisedb.dev/media/HEJ6DIX.gif',
-  };
+     1089: 'https://static.exercisedb.dev/media/HEJ6DIX.gif',
+     1090: 'https://static.exercisedb.dev/media/KtRomty.gif',
+   };
 
   const catalogToAdd = [
     [1052, 'treadmill (cardio)', 'Cinta Caminadora (Cardio)', 'cardio', 'Caminadora o treadmill para cardio'],
@@ -101,6 +102,7 @@ async function migrate(db) {
     [1087, 'glute bridge', 'Puente de Glúteos', 'upper legs', 'Puente de glúteos en el suelo'],
     [1088, 'lying leg curl (seated)', 'Curl Femoral Sentado', 'upper legs', 'Curl femoral en máquina sentado'],
     [1089, 'cable glute kickback', 'Patada de Glúteo en Polea', 'upper legs', 'Patada de glúteo en polea'],
+    [1090, 'ab wheel', 'Rueda Abdominal', 'waist', 'Rueda abdominal para core'],
   ];
   
   let added = 0;
@@ -129,6 +131,7 @@ async function migrate(db) {
     [1081, 'jHAnWmT'], [1082, 'C0MA9bC'], [1083, '0S75mYG'],
     [1084, '0jp9Rlz'], [1085, '1V1gj1u'], [1086, '5ipN0iE'],
     [1087, 'qKBpF7I'], [1088, '17lJ1kr'], [1089, 'HEJ6DIX'],
+    [1090, 'KtRomty'],
   ];
   for (const [id, exId] of gifUpdate) {
     q("UPDATE global_exercises SET gif_url = ? WHERE id = ?", [`https://static.exercisedb.dev/media/${exId}.gif`, id]);
@@ -166,7 +169,7 @@ async function migrate(db) {
     'Elevación de Talones de pie': 1084, 'Elevación de Talones Sentado': 1083,
     'Press Militar con Barra': 826, 'Elevaciones Laterales': 885,
     'Extensiones de Tríceps Polea': 1067, 'Curl Concentrado': 1085,
-    'Fondos en Paralelas': 643, 'Rueda Abdominal': 335,
+    'Fondos en Paralelas': 643, 'RUEDA ABDOMINAL': 1090,
     'Sentadilla Goblet': 987, 'Press Banca Inclinado': 1079,
     'Remo con Barra T': 527, 'Press Arnold Mancuernas': 958,
     'Curl Bíceps Polea': 966, 'Extensiones Tríceps Cuerda': 299,
@@ -185,7 +188,8 @@ async function migrate(db) {
       let catId = fixMap[cn];
       if (!catId) {
         for (const [key, val] of Object.entries(fixMap)) {
-          if (cn.startsWith(key) || cn.includes(key)) { catId = val; break; }
+          const uk = key.toUpperCase();
+          if (cn.startsWith(uk) || cn.includes(uk)) { catId = val; break; }
         }
       }
       if (catId) {
@@ -218,7 +222,7 @@ async function migrate(db) {
     'REMO CON BARRA (AGARRE SUPINO)': 1080,
     'SENTADILLA LIBRE CON BARRA': 1061,
     'PLANCHA ABDOMINAL': 614,
-    'RUEDA ABDOMINAL': null,
+    'RUEDA ABDOMINAL': 1090,
     'SENTADILLA BÚLGARA': null,
     'SENTADILLA BICICLETA': null,
     'DOMINADAS (PRUEBA)': null,
