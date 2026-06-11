@@ -164,26 +164,26 @@ async function migrate(db) {
   
   // 5. Fix known wrong exercise mappings
   const wrongFixMap = {
-    'Abductores en Máquina': 769, 'Abductores en Polea': 764,
-    'Aductores en Máquina': 778, 'Aductores en Polea': 778,
-    'Bicicleta Estática (Calentamiento)': 1055,
-    'Step-up con Mancuernas': null,
-    'Zancadas Laterales': 572,
-    'Peso Muerto Rumano con Barra': 513,
-    'Peso Muerto Rumano con Mancuernas': 507,
-    'Crunch en Polea Alta': 313,
-    'Elevaciones Laterales Polea': 885,
-    'Press Francés Mancuernas': 334,
-    'Máquina de Remo (Calentamiento)': 385,
-    'Remo en Máquina': 385,
-    'Prensa de Piernas 45°': 393,
-    'Remo con Barra (Agarre Supino)': 1080,
-    'Sentadilla Libre con Barra': 1061,
-    'Plancha Abdominal': 614,
-    'Rueda Abdominal': null,
-    'Sentadilla Búlgara': null,
-    'Sentadilla Bicicleta': null,
-    'Dominadas (prueba)': null,
+    'ABDUCTORES EN MÁQUINA': 769, 'ABDUCTORES EN POLEA': 764,
+    'ADUCTORES EN MÁQUINA': 778, 'ADUCTORES EN POLEA': 778,
+    'BICICLETA ESTÁTICA (CALENTAMIENTO)': 1055,
+    'STEP-UP CON MANCUERNAS': null,
+    'ZANCADAS LATERALES': 572,
+    'PESO MUERTO RUMANO CON BARRA': 513,
+    'PESO MUERTO RUMANO CON MANCUERNAS': 507,
+    'CRUNCH EN POLEA ALTA': 313,
+    'ELEVACIONES LATERALES POLEA': 885,
+    'PRESS FRANCÉS MANCUERNAS': 334,
+    'MÁQUINA DE REMO (CALENTAMIENTO)': 385,
+    'REMO EN MÁQUINA': 385,
+    'PRENSA DE PIERNAS 45°': 393,
+    'REMO CON BARRA (AGARRE SUPINO)': 1080,
+    'SENTADILLA LIBRE CON BARRA': 1061,
+    'PLANCHA ABDOMINAL': 614,
+    'RUEDA ABDOMINAL': null,
+    'SENTADILLA BÚLGARA': null,
+    'SENTADILLA BICICLETA': null,
+    'DOMINADAS (PRUEBA)': null,
   };
   
   let fixedWrong = 0;
@@ -191,26 +191,24 @@ async function migrate(db) {
   if (allExercises.length) {
     for (const [exId, exName] of allExercises[0].values) {
       const cn = exName.toUpperCase().trim();
-      let newGeId = null;
-      // Check exact name match
-      if (wrongFixMap[cn] !== undefined) {
-        newGeId = wrongFixMap[cn];
-      } else {
-        // Check fuzzy match
+      let newGeId = wrongFixMap[cn];
+      if (newGeId === undefined) {
         for (const [key, val] of Object.entries(wrongFixMap)) {
           if (cn.startsWith(key) || cn.includes(key)) { newGeId = val; break; }
         }
       }
       if (newGeId !== undefined) {
         const current = qOne("SELECT global_exercise_id FROM exercises WHERE id = ?", [exId]);
-        if (current && current[0] && newGeId !== null && current[0] !== newGeId) {
-          const gif = newGeId ? qOne("SELECT gif_url FROM global_exercises WHERE id = ?", [newGeId]) : null;
-          q("UPDATE exercises SET global_exercise_id = ?, gif_url = ? WHERE id = ?",
-            [newGeId, gif ? gif[0] : null, exId]);
-          fixedWrong++;
-        } else if (current && current[0] && newGeId === null) {
-          q("UPDATE exercises SET global_exercise_id = NULL, gif_url = NULL WHERE id = ?", [exId]);
-          fixedWrong++;
+        if (current && current[0]) {
+          if (newGeId !== null && current[0] !== newGeId) {
+            const gif = qOne("SELECT gif_url FROM global_exercises WHERE id = ?", [newGeId]);
+            q("UPDATE exercises SET global_exercise_id = ?, gif_url = ? WHERE id = ?",
+              [newGeId, gif ? gif[0] : null, exId]);
+            fixedWrong++;
+          } else if (newGeId === null) {
+            q("UPDATE exercises SET global_exercise_id = NULL, gif_url = NULL WHERE id = ?", [exId]);
+            fixedWrong++;
+          }
         }
       }
     }
