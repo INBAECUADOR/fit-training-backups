@@ -27,12 +27,6 @@ export default function ExerciseCard({ exercise, onRegister, onProgress, alterna
             <Search size={16} className="text-gym-400" />
             <span className="text-xs text-gray-500">Sin imagen disponible</span>
           </div>
-          {!showAlt && onLoadAlternatives && (
-            <button onClick={() => { setShowAlt(true); if (!alternatives) onLoadAlternatives() }}
-              className="text-xs font-bold text-gym-300 hover:text-white bg-gym-700/50 hover:bg-gym-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 mx-auto">
-              <RefreshCw size={12} /> Ver alternativas
-            </button>
-          )}
         </div>
       )}
       <div className="p-4">
@@ -45,6 +39,11 @@ export default function ExerciseCard({ exercise, onRegister, onProgress, alterna
         {exercise.observation && (
           <p className="text-xs text-gray-500 italic mb-3">{exercise.observation}</p>
         )}
+
+        <button onClick={() => { setShowAlt(!showAlt); if (!showAlt && !alternatives && onLoadAlternatives) onLoadAlternatives() }}
+          className="text-xs text-gym-400 hover:text-white transition mb-3 flex items-center gap-1.5">
+          <RefreshCw size={11} className={showAlt ? 'rotate-180 transition-transform' : ''} /> {showAlt ? 'Ocultar alternativas' : 'Ver alternativas'}
+        </button>
 
         {/* Alternatives */}
         {showAlt && altLoading && (
