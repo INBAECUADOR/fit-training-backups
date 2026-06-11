@@ -872,7 +872,25 @@ export default function Admin() {
                 <label className="block text-xs font-medium text-gray-400 mb-1">Fecha de la medición</label>
                 <input type="date" value={measDate}
                   onChange={e => setMeasDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
+                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 mb-2" />
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Hoy', days: 0 },
+                    { label: 'Ayer', days: 1 },
+                    { label: '7 días', days: 7 },
+                    { label: '15 días', days: 15 },
+                    { label: '30 días', days: 30 },
+                    { label: 'Inicio mes', getVal: () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] },
+                  ].map(opt => {
+                    const d = opt.getVal ? opt.getVal() : new Date(Date.now() - opt.days * 86400000).toISOString().split('T')[0]
+                    return (
+                      <button key={opt.label} type="button" onClick={() => setMeasDate(d)}
+                        className={`px-2 py-1 text-[10px] font-bold rounded-lg transition ${measDate === d ? 'bg-gym-400 text-white' : 'bg-gym-700/50 text-gray-400 hover:bg-gym-700 hover:text-white'}`}>
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <div className="mb-4">

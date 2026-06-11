@@ -162,6 +162,74 @@ async function migrate(db) {
   // 4. Fix typo 'Cinta Eléctica' -> 'Cinta Elíptica'
   q("UPDATE exercises SET name = REPLACE(name, 'Cinta Eléctica', 'Cinta Elíptica') WHERE name LIKE '%Cinta Eléctica%'", []);
   
+  // 5. Fix known wrong exercise mappings
+  const wrongFixMap = {
+    'Abductores en Máquina': 769, 'Abductores en Polea': 764,
+    'Aductores en Máquina': 778, 'Aductores en Polea': 778,
+    'Bicicleta Estática (Calentamiento)': 1055,
+    'Step-up con Mancuernas': null,
+    'Zancadas Laterales': 572,
+    'Peso Muerto Rumano con Barra': 513,
+    'Peso Muerto Rumano con Mancuernas': 507,
+    'Crunch en Polea Alta': 313,
+    'Elevaciones Laterales Polea': 885,
+    'Press Francés Mancuernas': 334,
+    'Máquina de Remo (Calentamiento)': 385,
+    'Remo en Máquina': 385,
+    'Prensa de Piernas 45°': 393,
+    'Remo con Barra (Agarre Supino)': 1080,
+    'Sentadilla Libre con Barra': 1061,
+    'Plancha Abdominal': 614,
+    'Rueda Abdominal': null,
+    'Sentadilla Búlgara': null,
+    'Sentadilla Bicicleta': null,
+    'Dominadas (prueba)': null,
+  };
+  
+  let fixedWrong = 0;
+  const allExercises = q("SELECT e.id, e.name FROM exercises e WHERE e.global_exercise_id IS NOT NULL", []);
+  if (allExercises.length) {
+    for (const [exId, exName] of allExercises[0].values) {
+      const cn = exName.toUpperCase().trim();
+      let newGeId = null;
+      // Check exact name match
+      if (wrongFixMap[cn] !== undefined) {
+        newGeId = wrongFixMap[cn];
+      } else {
+        // Check fuzzy match
+        for (const [key, val] of Object.entries(wrongFixMap)) {
+          if (cn.startsWith(key) || cn.includes(key)) { newGeId = val; break; }
+        }
+      }
+      if (newGeId !== undefined) {
+        const current = qOne("SELECT global_exercise_id FROM exercises WHERE id = ?", [exId]);
+        if (current && current[0] && newGeId !== null && current[0] !== newGeId) {
+          const gif = newGeId ? qOne("SELECT gif_url FROM global_exercises WHERE id = ?", [newGeId]) : null;
+          q("UPDATE exercises SET global_exercise_id = ?, gif_url = ? WHERE id = ?",
+            [newGeId, gif ? gif[0] : null, exId]);
+          fixedWrong++;
+        } else if (current && current[0] && newGeId === null) {
+          q("UPDATE exercises SET global_exercise_id = NULL, gif_url = NULL WHERE id = ?", [exId]);
+          fixedWrong++;
+        }
+      }
+    }
+  }
+  if (fixedWrong) console.log('Fixed', fixedWrong, 'wrong exercise mappings');
+  
+  // 6. Copy gif_url from global_exercises for any remaining exercises with missing GIFs
+  q(`
+    UPDATE exercises SET gif_url = (
+      SELECT ge.gif_url FROM global_exercises ge
+      WHERE ge.id = exercises.global_exercise_id
+      AND ge.gif_url IS NOT NULL AND ge.gif_url != ''
+    )
+    WHERE global_exercise_id IS NOT NULL
+    AND (exercises.gif_url IS NULL OR exercises.gif_url = '')
+  `, []);
+  const gifFixed = qOne("SELECT changes()");
+  if (gifFixed && gifFixed[0] > 0) console.log('Copied', gifFixed[0], 'GIF URLs from catalog');
+  
   console.log('Migration complete');
 }
 
