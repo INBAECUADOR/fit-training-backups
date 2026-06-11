@@ -9,6 +9,7 @@ import PRBoard from './pages/PRBoard'
 import CalorieCalculator from './pages/CalorieCalculator'
 import Admin from './pages/Admin'
 import AgentIA from './pages/AgentIA'
+import Manual from './pages/Manual'
 import Footer from './components/Footer'
 
 function PrivateRoute({ children }) {
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/calories" element={<PrivateRoute><CalorieCalculator /></PrivateRoute>} />
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="/ai-agent" element={<AdminRoute><AgentIA /></AdminRoute>} />
+          <Route path="/manual" element={<PrivateRoute><Manual /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

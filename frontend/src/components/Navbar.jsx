@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy, LogOut, Calculator, Shield, Bot, User } from 'lucide-react'
+import { LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy, LogOut, Calculator, Shield, Bot, User, BookOpen } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 function getInitials(name) {
@@ -13,6 +13,7 @@ const links = [
   { to: '/evolution', label: 'Evolución', icon: TrendingUp },
   { to: '/pr-board', label: 'Records', icon: Trophy },
   { to: '/calories', label: 'Calorías', icon: Calculator },
+  { to: '/manual', label: 'Manual', icon: BookOpen },
   { to: '/admin', label: 'Admin', icon: Shield },
   { to: '/ai-agent', label: 'Agente IA', icon: Bot },
 ]
