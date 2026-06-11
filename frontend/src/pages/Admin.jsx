@@ -250,6 +250,7 @@ export default function Admin() {
       setMeasForm({ ...empty, notes: '' })
       setMeasPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
       setMeasPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
+      setMeasDate(new Date().toISOString().split('T')[0])
       setTimeout(() => setMeasSaved(false), 2000)
     } catch {} finally {
       setMeasSaving(false)
