@@ -41,15 +41,17 @@ export default function Dashboard() {
   const [measHistory, setMeasHistory] = useState([])
   const fileInputRef = useRef()
   const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
   const token = localStorage.getItem('token')
 
   useEffect(() => {
-    setData(null); setComposition(null); setMeasHistory([])
-    getDashboard().then(setData).catch(() => {})
-    getBodyComposition().then(setComposition).catch(() => {})
-    getMeasurementsHistory().then(setMeasHistory).catch(() => {})
+    let mounted = true
+    getDashboard().then(d => { if (mounted) setData(d) }).catch(() => { if (mounted) setData(null) })
+    getBodyComposition().then(c => { if (mounted) setComposition(c) }).catch(() => { if (mounted) setComposition(null) })
+    getMeasurementsHistory().then(h => { if (mounted) setMeasHistory(h) }).catch(() => { if (mounted) setMeasHistory([]) })
+    return () => { mounted = false }
   }, [token])
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   const handleWeightSave = async e => {
     e.preventDefault()
