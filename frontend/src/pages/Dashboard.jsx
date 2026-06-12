@@ -42,12 +42,14 @@ export default function Dashboard() {
   const fileInputRef = useRef()
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const token = localStorage.getItem('token')
 
   useEffect(() => {
+    setData(null); setComposition(null); setMeasHistory([])
     getDashboard().then(setData).catch(() => {})
     getBodyComposition().then(setComposition).catch(() => {})
     getMeasurementsHistory().then(setMeasHistory).catch(() => {})
-  }, [])
+  }, [token])
 
   const handleWeightSave = async e => {
     e.preventDefault()

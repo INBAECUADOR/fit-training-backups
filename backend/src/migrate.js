@@ -325,7 +325,127 @@ async function migrate(db) {
     }
     console.log('Seeded', quotes.length, 'motivational quotes');
   }
-  
+
+  // 9. Create missing users from measurement report
+  const reportUsers = [
+    ['10000101', 'Carlos Galarza'], ['10000102', 'María José Chasi'],
+    ['10000103', 'Kemberly Mairet Huizi Pérez'], ['10000104', 'Jorge Guevara'],
+    ['10000105', 'Ana Suri'], ['10000106', 'Maleh Certad'],
+    ['10000107', 'Carla Zambrano'], ['10000108', 'Alex Hugo'],
+    ['10000109', 'Kathy Povea'], ['10000110', 'Juan Manuel Yepez'],
+    ['10000111', 'Consuelo Minda'], ['10000112', 'Bryan Samuel Molina Burgos'],
+    ['10000113', 'Andrea Villacis'], ['10000114', 'Gianina Naranjo Rivadeneira'],
+    ['10000115', 'Tony Velez'], ['10000116', 'Celia Pozo'],
+    ['10000117', 'Charlie Davila'], ['10000118', 'Gabriela Silva'],
+    ['10000119', 'Mariana Lozada'], ['10000120', 'Nelson Lopez'],
+    ['10000121', 'Mauro Cabrera'],
+  ];
+  let reportCreated = 0;
+  for (const [doc, name] of reportUsers) {
+    const existing = qOne("SELECT id FROM users WHERE document_id = ?", [doc]);
+    if (!existing) {
+      const hash = bcrypt.hashSync('1234', 10);
+      q("INSERT INTO users (document_id, name, password, role, email) VALUES (?, ?, ?, 'user', '')", [doc, name, hash]);
+      const uid = qOne("SELECT last_insert_rowid()")[0];
+      const days = [['Lunes','Día 1'],['Martes','Día 2'],['Miércoles','Día 3'],['Jueves','Día 4'],['Viernes','Día 5']];
+      for (const [dn, dl] of days) q("INSERT INTO routines (user_id, day_name, day_label) VALUES (?, ?, ?)", [uid, dn, dl]);
+      reportCreated++;
+    }
+  }
+  if (reportCreated) console.log('Created', reportCreated, 'report users');
+
+  // 10. Insert measurements from report
+  const measurements = [
+    ['2025-08-01','Carlos Galarza',60,109,108,40,null,null,null,null,null,null,null,null,170,82.7],
+    ['2025-07-07','Carlos Galarza',60,110,106,40,null,null,null,null,null,null,null,null,170,82.5],
+    ['2025-09-24','Carlos Galarza',60,109,109,40,null,null,null,null,null,null,null,null,null,82.9],
+    ['2025-09-01','María José Chasi',43,90,84,31,null,null,null,null,null,null,null,null,null,60],
+    ['2026-05-05','María José Chasi',42,88,84,31,null,null,null,null,null,null,null,null,null,60],
+    ['2026-02-20','María José Chasi',41,91,85,32,null,null,null,null,null,null,null,null,null,61],
+    ['2025-10-21','María José Chasi',43,89,84,31,null,null,null,null,null,null,null,null,null,60],
+    ['2025-12-02','Kemberly Mairet Huizi Pérez',42,82,50,30,null,null,null,null,null,null,null,null,88,54],
+    ['2025-11-11','Kemberly Mairet Huizi Pérez',42,89,82,30,null,null,null,null,null,null,null,null,162,54],
+    ['2026-01-15','Kemberly Mairet Huizi Pérez',42,85,79,30,null,null,null,null,null,null,null,null,163,53],
+    ['2026-02-02','Jorge Guevara',47,98,99,35,null,null,null,null,null,null,null,null,null,71],
+    ['2026-05-05','Jorge Guevara',48,101,101,36,null,null,null,null,null,null,null,null,null,69],
+    ['2025-11-06','Jorge Guevara',50,102,103,36,null,null,null,null,null,null,null,null,null,70],
+    ['2025-06-16','Jorge Guevara',51,101,102,37,null,null,null,null,null,null,null,null,null,null],
+    ['2025-10-20','Jorge Guevara',52,102,102,36,null,null,null,null,null,null,null,null,null,69.8],
+    ['2025-07-21','Jorge Guevara',50,99,100,36,null,null,null,null,null,null,null,null,null,70],
+    ['2025-08-25','Jorge Guevara',50,100,103,37,null,null,null,null,null,null,null,null,null,70.5],
+    ['2025-11-03','Ana Suri',null,92,82,31,null,null,null,null,null,null,null,null,163,63],
+    ['2025-10-03','Maleh Certad',48,94,null,36,null,null,null,null,null,null,null,null,null,78.3],
+    ['2025-09-03','Maleh Certad',50,96,null,35,null,null,null,null,null,null,null,null,null,79.8],
+    ['2025-08-04','Maleh Certad',52,97,null,35,null,null,null,null,null,null,null,null,null,81.7],
+    ['2025-12-05','Maleh Certad',48,92,null,35,null,null,null,null,null,null,null,null,null,76],
+    ['2025-07-05','Maleh Certad',51,95,null,35,null,null,null,null,null,null,null,null,177,84],
+    ['2025-11-08','Maleh Certad',49,95,null,35,null,null,null,null,null,null,null,null,null,77],
+    ['2026-01-10','Maleh Certad',49,93,null,36,null,null,null,null,null,null,null,null,null,77],
+    ['2025-08-19','Maleh Certad',49,95,null,35,null,null,null,null,null,null,null,null,null,82],
+    ['2025-07-19','Maleh Certad',52,96,null,35,null,null,null,null,null,null,null,null,null,82.5],
+    ['2025-09-19','Maleh Certad',48,94,null,35,null,null,null,null,null,null,null,null,null,78.3],
+    ['2026-02-20','Maleh Certad',50,96,null,36,null,null,null,null,null,null,null,null,null,79],
+    ['2025-10-20','Maleh Certad',48,95,null,35,null,null,null,null,null,null,null,null,null,78.1],
+    ['2026-03-14','Maleh Certad',45,94,null,34,null,null,null,null,null,null,null,null,null,78],
+    ['2026-04-28','Maleh Certad',48,95,null,35,null,null,null,null,null,null,null,null,null,79.2],
+    ['2025-09-03','Carla Zambrano',40,96,91,34,null,null,null,null,null,null,null,null,159,65],
+    ['2025-07-12','Carla Zambrano',42,98,95,36,null,null,null,null,null,null,null,null,159,65.6],
+    ['2025-07-16','Alex Hugo',55,116,122,43,null,null,null,null,null,null,null,null,null,95.7],
+    ['2025-12-18','Alex Hugo',52,117,123,43,null,null,null,null,null,null,null,null,null,95],
+    ['2026-05-05','Alex Hugo',55,116,124,41,null,null,null,null,null,null,null,null,null,90],
+    ['2026-01-06','Kathy Povea',46,98,94,36,null,null,null,null,null,null,null,null,null,86],
+    ['2026-04-09','Kathy Povea',43,102,90,35,null,null,null,null,null,null,null,null,null,86],
+    ['2025-12-11','Kathy Povea',48,104,98,37,null,null,null,null,null,null,null,null,null,87],
+    ['2026-03-16','Kathy Povea',44,103,91,35,null,null,null,null,null,null,null,null,null,86],
+    ['2026-02-20','Kathy Povea',44,106,92,35,null,null,null,null,null,null,null,null,null,86],
+    ['2026-05-22','Kathy Povea',42,101,90,35,null,null,null,null,null,null,null,null,null,86.8],
+    ['2026-01-29','Kathy Povea',46,96,93,36,null,null,null,null,null,null,null,null,157,86],
+    ['2026-03-07','Juan Manuel Yepez',48,98,98,35,null,null,null,null,null,null,null,null,null,51],
+    ['2026-01-11','Juan Manuel Yepez',47,96,93,34,null,null,null,null,null,null,null,null,164,62.5],
+    ['2026-01-08','Consuelo Minda',40,103,92,33,null,null,null,null,null,null,null,null,null,65],
+    ['2025-12-11','Consuelo Minda',40,105,94,34,null,null,null,null,null,null,null,null,null,65.9],
+    ['2026-03-16','Consuelo Minda',40,100,93,33,null,null,null,null,null,null,null,null,null,65],
+    ['2026-02-20','Consuelo Minda',40,103,90,33,null,null,null,null,null,null,null,null,null,63],
+    ['2026-01-29','Consuelo Minda',40,101,91,33,null,null,null,null,null,null,null,null,155,65],
+    ['2026-04-10','Consuelo Minda',41,101,92,33,null,null,null,null,null,null,null,null,155,64.1],
+    ['2026-03-08','Bryan Samuel Molina Burgos',49,98,106,38,null,null,null,null,null,null,null,null,169,71],
+    ['2026-04-10','Andrea Villacis',43,97,86,33,null,null,null,null,null,null,null,null,null,66.4],
+    ['2026-05-21','Andrea Villacis',42,95,84,33,null,null,null,null,null,null,null,null,null,64.4],
+    ['2026-04-10','Gianina Naranjo Rivadeneira',43,97,90,33,null,null,null,null,null,null,null,null,null,69.2],
+    ['2026-02-27','Gianina Naranjo Rivadeneira',42,100,90,35,null,null,null,null,null,null,null,null,175,70],
+    ['2026-05-11','Tony Velez',48,100,100,39,null,null,null,null,null,null,null,null,169,72.5],
+    ['2025-09-15','Tony Velez',49,100,102,41,null,null,null,null,null,null,null,null,null,75.5],
+    ['2025-09-12','Celia Pozo',48,118,100,37,null,null,null,null,null,null,null,null,null,94.7],
+    ['2025-07-14','Charlie Davila',47,103,102,39,null,null,null,null,null,null,null,null,null,78],
+    ['2025-09-19','Gabriela Silva',40,100,94,32,null,null,null,null,null,null,null,null,null,71.8],
+    ['2025-11-22','Gabriela Silva',44,106,95,33,null,null,null,null,null,null,null,null,null,73],
+    ['2026-01-26','Gabriela Silva',47,106,97,32,null,null,null,null,null,null,null,null,170,76],
+    ['2025-06-26','Gabriela Silva',39,100,92,33,null,null,null,null,null,null,null,null,null,53.5],
+    ['2025-09-19','Mariana Lozada',40,81,84,29,null,null,null,null,null,null,null,null,null,55.8],
+    ['2025-08-27','Mariana Lozada',41,81,85,29,null,null,null,null,null,null,null,null,161,56.3],
+    ['2025-09-19','Nelson Lopez',48,98,99,38,null,null,null,null,null,null,null,null,null,69.5],
+    ['2025-08-27','Nelson Lopez',47,97,95,38,null,null,null,null,null,null,null,null,169,69.4],
+    ['2025-07-25','Mauro Cabrera',52,92,98,35,null,null,null,null,null,null,null,null,168,57.8],
+  ];
+
+  const userMap = {};
+  const allUsers = q("SELECT id, name FROM users");
+  if (allUsers.length) allUsers[0].values.forEach(u => { userMap[u[1].toLowerCase().trim()] = u[0]; });
+
+  let measInserted = 0;
+  for (const row of measurements) {
+    const [dateStr, name, ...vals] = row;
+    const key = name.toLowerCase().trim();
+    const uid = userMap[key];
+    if (!uid) continue;
+    const existing = qOne("SELECT id FROM measurements WHERE user_id = ? AND date(created_at) = ?", [uid, dateStr]);
+    if (existing) continue;
+    q("INSERT INTO measurements (user_id, shoulders, chest, back, neck, biceps, forearms, wrist, mid_abdomen, waist, hips, thigh, mid_thigh, calf, height, weight, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [uid, vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9], vals[10], vals[11], vals[12], vals[13], vals[14], dateStr]);
+    measInserted++;
+  }
+  if (measInserted) console.log('Inserted', measInserted, 'measurements from report');
+
   console.log('Migration complete');
 }
 
