@@ -7,6 +7,7 @@ import {
 } from 'chart.js'
 import { getMeasurements, saveMeasurement, deleteMeasurement, downloadExport } from '../api'
 import Navbar from '../components/Navbar'
+import { useToast } from '../components/Toast'
 import { Download, Trash2, Camera } from 'lucide-react'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -18,9 +19,10 @@ export default function Evolution() {
   const [photos, setPhotos] = useState({ photo1: null, photo2: null, photo3: null, photo4: null })
   const [photoPreviews, setPhotoPreviews] = useState({ photo1: '', photo2: '', photo3: '', photo4: '' })
   const [expandedPhoto, setExpandedPhoto] = useState(null)
+  const { showToast } = useToast()
 
   useEffect(() => {
-    getMeasurements().then(setMeasurements).catch(() => {})
+    getMeasurements().then(setMeasurements).catch(() => showToast('Error al cargar mediciones', 'error'))
   }, [])
 
   const handleSubmit = async e => {
@@ -42,7 +44,8 @@ export default function Evolution() {
       setPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
       setPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
       setShowForm(false)
-    } catch {}
+      showToast('Medición guardada', 'success')
+    } catch { showToast('Error al guardar medición', 'error') }
   }
 
   const handlePhoto = (field, file) => {
@@ -58,7 +61,7 @@ export default function Evolution() {
 
   const handleDeleteMeas = async (id) => {
     if (!confirm('¿Eliminar esta medición?')) return
-    try { await deleteMeasurement(id); setMeasurements(prev => prev.filter(x => x.id !== id)) } catch {}
+    try { await deleteMeasurement(id); setMeasurements(prev => prev.filter(x => x.id !== id)); showToast('Medición eliminada', 'success') } catch { showToast('Error al eliminar medición', 'error') }
   }
 
   const sorted = [...measurements].reverse()

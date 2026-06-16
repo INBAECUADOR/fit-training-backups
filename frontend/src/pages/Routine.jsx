@@ -5,6 +5,7 @@ import ResultModal from '../components/ResultModal'
 import ExerciseProgress from '../components/ExerciseProgress'
 import RestTimer from '../components/RestTimer'
 import Navbar from '../components/Navbar'
+import { useToast } from '../components/Toast'
 import { Dumbbell, RefreshCw } from 'lucide-react'
 
 const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -21,16 +22,17 @@ export default function Routine() {
   const [autoRestTime, setAutoRestTime] = useState(null)
   const [alternatives, setAlternatives] = useState({})
   const [altLoading, setAltLoading] = useState({})
+  const { showToast } = useToast()
 
   useEffect(() => {
-    getRoutines().then(setRoutines).catch(() => {})
+    getRoutines().then(setRoutines).catch(() => showToast('Error al cargar rutinas', 'error'))
   }, [])
 
   useEffect(() => {
     setLoading(true)
     getExercises(selectedDay)
       .then(setExercises)
-      .catch(() => setExercises([]))
+      .catch(() => { setExercises([]); showToast('Error al cargar ejercicios', 'error') })
       .finally(() => setLoading(false))
   }, [selectedDay])
 
@@ -47,7 +49,7 @@ export default function Routine() {
     try {
       const data = await getAlternatives(exId)
       setAlternatives(p => ({ ...p, [exId]: data }))
-    } catch {} finally {
+    } catch { showToast('Error al cargar alternativas', 'error') } finally {
       setAltLoading(p => ({ ...p, [exId]: false }))
     }
   }, [])

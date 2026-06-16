@@ -11,6 +11,7 @@ import Admin from './pages/Admin'
 import AgentIA from './pages/AgentIA'
 import Manual from './pages/Manual'
 import Footer from './components/Footer'
+import { ToastProvider } from './components/Toast'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
@@ -27,6 +28,7 @@ function AdminRoute({ children }) {
 
 export default function App() {
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-gym-900 flex flex-col">
       <div className="flex-1">
         <Routes>
@@ -45,5 +47,6 @@ export default function App() {
       </div>
       <Footer />
     </div>
+    </ToastProvider>
   )
 }

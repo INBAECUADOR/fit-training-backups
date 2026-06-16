@@ -6,6 +6,7 @@ import {
   Title, Tooltip, Legend, Filler
 } from 'chart.js'
 import { getResults } from '../api'
+import { useToast } from './Toast'
 import { X, TrendingUp, Trophy } from 'lucide-react'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -13,9 +14,10 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 export default function ExerciseProgress({ exercise, onClose }) {
   const [results, setResults] = useState([])
   const [mode, setMode] = useState('weight')
+  const { showToast } = useToast()
 
   useEffect(() => {
-    getResults(exercise.id).then(setResults).catch(() => {})
+    getResults(exercise.id).then(setResults).catch(() => showToast('Error al cargar resultados', 'error'))
   }, [exercise.id])
 
   const dataPoints = results.slice().reverse()

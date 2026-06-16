@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { getResults, saveResult, getSuggestion } from '../api'
+import { useToast } from './Toast'
 import { X, Sparkles, TrendingUp } from 'lucide-react'
 
 export default function ResultModal({ exercise, onClose, onSaved }) {
@@ -10,6 +11,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
   const [lastResult, setLastResult] = useState(null)
   const [suggestion, setSuggestion] = useState(null)
   const [saving, setSaving] = useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
     getResults(exercise.id).then(results => {
@@ -31,7 +33,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
       })
       if (onSaved) onSaved(exercise.rest ? parseInt(exercise.rest) : 60)
       onClose()
-    } catch {} finally {
+    } catch { showToast('Error al guardar el resultado', 'error') } finally {
       setSaving(false)
     }
   }

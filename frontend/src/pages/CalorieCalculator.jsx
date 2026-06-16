@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import Navbar from '../components/Navbar'
 import { analyzeFoodImage, searchFoods, calculateCalories } from '../api'
+import { useToast } from '../components/Toast'
 import { Camera, Upload, Loader2, Utensils, AlertCircle, Image as ImageIcon, Search, Plus, X, Check } from 'lucide-react'
 
 const MEAL_TYPES = ['desayuno', 'almuerzo', 'cena', 'snack']
@@ -23,6 +24,7 @@ export default function CalorieCalculator() {
   const [searching, setSearching] = useState(false)
   const [mealType, setMealType] = useState('')
   const searchTimer = useRef(null)
+  const { showToast } = useToast()
 
   const doSearch = useCallback(async (q) => {
     if (!q.trim()) { setFoodResults([]); return }
@@ -30,7 +32,7 @@ export default function CalorieCalculator() {
     try {
       const data = await searchFoods(q)
       setFoodResults(data)
-    } catch { setFoodResults([]) }
+    } catch { setFoodResults([]); showToast('Error al buscar alimentos', 'error') }
     setSearching(false)
   }, [])
 
@@ -94,7 +96,7 @@ export default function CalorieCalculator() {
       setResult(null)
       setError('')
       setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = s }, 100)
-    } catch { setError('No se pudo acceder a la cámara') }
+    } catch { setError('No se pudo acceder a la cámara'); showToast('No se pudo acceder a la cámara', 'error') }
   }
 
   const capturePhoto = () => {

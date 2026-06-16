@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import { getDiet, saveDiet } from '../api'
+import { useToast } from '../components/Toast'
 import { Save } from 'lucide-react'
 
 const mealTimes = [
@@ -18,9 +19,10 @@ export default function Diet() {
   const [meals, setMeals] = React.useState({})
   const [saving, setSaving] = React.useState(false)
   const [saved, setSaved] = React.useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
-    getDiet().then(setMeals).catch(() => {})
+    getDiet().then(setMeals).catch(() => showToast('Error al cargar el plan de alimentación', 'error'))
   }, [])
 
   const updateMeal = (day, mealKey, value) => {
@@ -36,7 +38,8 @@ export default function Diet() {
       await saveDiet(meals)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch {} finally {
+      showToast('Plan de alimentación guardado', 'success')
+    } catch { showToast('Error al guardar el plan de alimentación', 'error') } finally {
       setSaving(false)
     }
   }

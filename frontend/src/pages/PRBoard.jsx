@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { getPRs, downloadExport } from '../api'
 import Navbar from '../components/Navbar'
+import { useToast } from '../components/Toast'
 import { Trophy, Search, Dumbbell, BarChart3, Download } from 'lucide-react'
 
 function estimate1RM(weight, reps) {
@@ -13,8 +14,10 @@ export default function PRBoard() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('weight')
 
+  const { showToast } = useToast()
+
   useEffect(() => {
-    getPRs().then(setPrs).catch(() => {})
+    getPRs().then(setPrs).catch(() => showToast('Error al cargar records', 'error'))
   }, [])
 
   const filtered = prs

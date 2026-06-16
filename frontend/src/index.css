@@ -35,3 +35,12 @@ body {
     @apply bg-gym-800 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition duration-200;
   }
 }
+
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.toast-slide-in {
+  animation: toast-slide-in 0.3s ease-out;
+}

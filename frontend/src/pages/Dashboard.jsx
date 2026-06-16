@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDashboard, saveWeight, uploadAvatar, getBodyComposition, getMeasurementsHistory, changePassword } from '../api'
 import Navbar from '../components/Navbar'
+import { useToast } from '../components/Toast'
 import { Flame, Calendar, Trophy, Activity, Dumbbell, ArrowRight, Weight, Camera, TrendingUp, Heart, Shield } from 'lucide-react'
 
 function getInitials(name) {
@@ -45,11 +46,12 @@ export default function Dashboard() {
   const [pwSaving, setPwSaving] = useState(false)
   const fileInputRef = useRef()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const token = localStorage.getItem('token')
 
   useEffect(() => {
     let mounted = true
-    getDashboard().then(d => { if (mounted) setData(d) }).catch(() => { if (mounted) setData(null) })
+    getDashboard().then(d => { if (mounted) setData(d) }).catch(() => { if (mounted) { setData(null); showToast('Error al cargar el dashboard', 'error') } })
     getBodyComposition().then(c => { if (mounted) setComposition(c) }).catch(() => { if (mounted) setComposition(null) })
     getMeasurementsHistory().then(h => { if (mounted) setMeasHistory(h) }).catch(() => { if (mounted) setMeasHistory([]) })
     return () => { mounted = false }
@@ -71,7 +73,7 @@ export default function Dashboard() {
       setComposition(comp)
       const hist = await getMeasurementsHistory()
       setMeasHistory(hist)
-    } catch {}
+    } catch { showToast('Error al guardar el peso', 'error') }
   }
 
   const handleAvatarChange = async e => {
@@ -83,7 +85,7 @@ export default function Dashboard() {
       const updatedUser = { ...user, avatar_url }
       localStorage.setItem('user', JSON.stringify(updatedUser))
       window.location.reload()
-    } catch { setAvatarUploading(false) }
+    } catch { setAvatarUploading(false); showToast('Error al subir la foto', 'error') }
   }
 
   const handleChangePw = async e => {
@@ -91,9 +93,12 @@ export default function Dashboard() {
     try {
       await changePassword({ document_id: user.document_id, current_password: pwCurrent, new_password: pwNew })
       setPwMsg('Contraseña actualizada correctamente')
+      showToast('Contraseña actualizada correctamente', 'success')
       setPwCurrent(''); setPwNew('')
     } catch (err) {
-      setPwMsg(err.response?.data?.error || 'Error al cambiar contraseña')
+      const msg = err.response?.data?.error || 'Error al cambiar contraseña'
+      setPwMsg(msg)
+      showToast(msg, 'error')
     } finally { setPwSaving(false) }
   }
 

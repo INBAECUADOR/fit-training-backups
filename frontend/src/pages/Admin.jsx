@@ -11,6 +11,7 @@ import {
   adminGetMotivation, adminCreateMotivation, adminDeleteMotivation,
 } from '../api'
 import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw, MessageCircle } from 'lucide-react'
+import { useToast } from '../components/Toast'
 import { useNavigate } from 'react-router-dom'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -59,6 +60,7 @@ const exerciseImgSrc = (gifUrl) => {
 
 export default function Admin() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [tab, setTab] = useState('exercises')
 
   // --- User selector ---
@@ -107,10 +109,10 @@ export default function Admin() {
 
   const loadUserData = (userId) => {
     const params = userId ? { user_id: userId } : {}
-    adminGetRoutines(params).then(setRoutines).catch(() => {})
-    adminGetExercises(params).then(setExercises).catch(() => {})
-    getDiet(params).then(setMeals).catch(() => {})
-    getMeasurements(params).then(setMeasurements).catch(() => {})
+    adminGetRoutines(params).then(setRoutines).catch(() => showToast('Error al cargar rutinas', 'error'))
+    adminGetExercises(params).then(setExercises).catch(() => showToast('Error al cargar ejercicios', 'error'))
+    getDiet(params).then(setMeals).catch(() => showToast('Error al cargar dieta', 'error'))
+    getMeasurements(params).then(setMeasurements).catch(() => showToast('Error al cargar mediciones', 'error'))
   }
 
   useEffect(() => {
@@ -118,7 +120,7 @@ export default function Admin() {
       setUsers(list)
       const firstUser = list.find(u => u.role !== 'admin') || list[0]
       if (firstUser) setSelectedUserId(firstUser.id)
-    }).catch(() => {})
+    }).catch(() => showToast('Error al cargar usuarios', 'error'))
   }, [])
 
   useEffect(() => {
@@ -127,7 +129,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (tab === 'catalog') loadGlobalCatalog('', '')
-    if (tab === 'motivation') adminGetMotivation().then(setQuotes).catch(() => {})
+    if (tab === 'motivation') adminGetMotivation().then(setQuotes).catch(() => showToast('Error al cargar frases', 'error'))
   }, [tab])
 
   // Root admin — no mostrar tabs de datos si el usuario es admin
@@ -138,7 +140,7 @@ export default function Admin() {
     const params = {}
     if (search) params.search = search
     if (group) params.group = group
-    adminGetGlobalExercises(params).then(setGlobalExercises).catch(() => {})
+    adminGetGlobalExercises(params).then(setGlobalExercises).catch(() => showToast('Error al cargar catálogo', 'error'))
   }
 
   // --- Exercise handlers ---
@@ -152,7 +154,8 @@ export default function Admin() {
       await adminUpdateRoutine(routine.id, { day_label: editingRoutine })
       setRoutines(await adminGetRoutines())
       setEditingRoutine(null)
-    } catch {}
+      showToast('Etiqueta actualizada', 'success')
+    } catch { showToast('Error al actualizar etiqueta', 'error') }
   }
 
   const resetForm = () => setForm({ name: '', series: '', reps: '', rest: '', observation: '', gif_url: '', global_exercise_id: null })
@@ -177,7 +180,8 @@ export default function Admin() {
       setShowForm(false)
       setEditingExercise(null)
       resetForm()
-    } catch {}
+      showToast(editingExercise ? 'Ejercicio actualizado' : 'Ejercicio creado', 'success')
+    } catch { showToast('Error al guardar ejercicio', 'error') }
   }
 
   const pickFromCatalog = (ex) => {
@@ -191,7 +195,7 @@ export default function Admin() {
     const params = {}
     if (search) params.search = search
     if (group) params.group = group
-    adminGetGlobalExercises(params).then(setGlobalPickerExercises).catch(() => {})
+    adminGetGlobalExercises(params).then(setGlobalPickerExercises).catch(() => showToast('Error al cargar catálogo', 'error'))
   }
 
   const handleEdit = (ex) => {
@@ -205,7 +209,8 @@ export default function Admin() {
     try {
       await adminDeleteExercise(id)
       setExercises(prev => prev.filter(e => e.id !== id))
-    } catch {}
+      showToast('Ejercicio eliminado', 'success')
+    } catch { showToast('Error al eliminar ejercicio', 'error') }
   }
 
   const toggleDay = (day) => setExpandedDays(prev => ({ ...prev, [day]: !prev[day] }))
@@ -221,10 +226,11 @@ export default function Admin() {
     setDietSaving(true)
     try {
       await saveDiet(meals, userParams)
-      getDiet(userParams).then(setMeals).catch(() => {})
+      getDiet(userParams).then(setMeals).catch(() => showToast('Error al recargar dieta', 'error'))
       setDietSaved(true)
       setTimeout(() => setDietSaved(false), 2000)
-    } catch {} finally {
+      showToast('Dieta guardada', 'success')
+    } catch { showToast('Error al guardar dieta', 'error') } finally {
       setDietSaving(false)
     }
   }
@@ -244,7 +250,7 @@ export default function Admin() {
       if (measPhotos.photo3) fd.append('photo3', measPhotos.photo3)
       if (measPhotos.photo4) fd.append('photo4', measPhotos.photo4)
       await saveMeasurement(fd, userParams)
-      getMeasurements(userParams).then(setMeasurements).catch(() => {})
+      getMeasurements(userParams).then(setMeasurements).catch(() => showToast('Error al recargar mediciones', 'error'))
       setMeasSaved(true)
       const empty = Object.fromEntries(fields.map(k => [k, '']))
       setMeasForm({ ...empty, notes: '' })
@@ -252,7 +258,8 @@ export default function Admin() {
       setMeasPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
       setMeasDate(new Date().toISOString().split('T')[0])
       setTimeout(() => setMeasSaved(false), 2000)
-    } catch {} finally {
+      showToast('Medición guardada', 'success')
+    } catch { showToast('Error al guardar medición', 'error') } finally {
       setMeasSaving(false)
     }
   }
@@ -289,8 +296,9 @@ export default function Admin() {
       resetUserForm()
       setShowUserForm(false)
       setEditingUserId(null)
+      showToast(editingUserId ? 'Usuario actualizado' : 'Usuario creado', 'success')
     } catch (err) {
-      alert(err?.response?.data?.error || 'Error al guardar usuario')
+      showToast(err?.response?.data?.error || 'Error al guardar usuario', 'error')
     }
   }
 
@@ -305,7 +313,8 @@ export default function Admin() {
     try {
       await adminDeleteUser(id)
       setUsers(prev => prev.filter(u => u.id !== id))
-    } catch {}
+      showToast('Usuario eliminado', 'success')
+    } catch { showToast('Error al eliminar usuario', 'error') }
   }
 
   // --- Motivation ---
@@ -944,7 +953,7 @@ export default function Admin() {
                         </div>
                         <button onClick={async () => {
                           if (!confirm('¿Eliminar esta medición?')) return
-                          try { await deleteMeasurement(m.id); setMeasurements(prev => prev.filter(x => x.id !== m.id)) } catch {}
+                          try { await deleteMeasurement(m.id); setMeasurements(prev => prev.filter(x => x.id !== m.id)); showToast('Medición eliminada', 'success') } catch { showToast('Error al eliminar medición', 'error') }
                         }} className="p-1.5 text-gray-400 hover:text-gym-400 transition shrink-0" title="Eliminar">
                           <Trash2 size={14} />
                         </button>
@@ -1326,7 +1335,8 @@ export default function Admin() {
                       setShowGlobalForm(false)
                       setEditingGlobal(null)
                       loadGlobalCatalog(catalogSearch, catalogGroup)
-                    } catch {}
+                      showToast(editingGlobal ? 'Ejercicio global actualizado' : 'Ejercicio global creado', 'success')
+                    } catch { showToast('Error al guardar ejercicio global', 'error') }
                   }} className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-gym-200 to-emerald-400 text-gym-900 rounded-lg font-bold text-sm transition hover:from-emerald-400 hover:to-green-500">
                     <Save size={14} /> {editingGlobal ? 'Actualizar' : 'Crear'}
                   </button>
@@ -1364,7 +1374,7 @@ export default function Admin() {
                               className="p-1 text-gray-400 hover:text-gym-300 transition" title="Editar"><Pencil size={12} /></button>
                             <button onClick={async () => {
                               if (!confirm(`¿Eliminar "${ex.name}" del catálogo?`)) return
-                              try { await adminDeleteGlobalExercise(ex.id); loadGlobalCatalog(catalogSearch, catalogGroup) } catch {}
+                              try { await adminDeleteGlobalExercise(ex.id); loadGlobalCatalog(catalogSearch, catalogGroup); showToast('Ejercicio global eliminado', 'success') } catch { showToast('Error al eliminar ejercicio global', 'error') }
                             }} className="p-1 text-gray-400 hover:text-gym-400 transition" title="Eliminar"><Trash2 size={12} /></button>
                           </div>
                         </div>
@@ -1399,7 +1409,8 @@ export default function Admin() {
                 setQuoteText('')
                 setQuoteAuthor('')
                 setQuotes(await adminGetMotivation())
-              } catch {}
+                showToast('Frase agregada', 'success')
+              } catch { showToast('Error al agregar frase', 'error') }
             }} className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-5 mb-6">
               <h3 className="text-sm font-bold text-white mb-4">Nueva frase</h3>
               <div className="grid grid-cols-1 gap-3 mb-4">
@@ -1430,7 +1441,7 @@ export default function Admin() {
                     </div>
                     <button onClick={async () => {
                       if (!confirm('¿Eliminar esta frase?')) return
-                      try { await adminDeleteMotivation(q.id); setQuotes(await adminGetMotivation()) } catch {}
+                      try { await adminDeleteMotivation(q.id); setQuotes(await adminGetMotivation()); showToast('Frase eliminada', 'success') } catch { showToast('Error al eliminar frase', 'error') }
                     }} className="p-1 text-gray-400 hover:text-gym-400 transition shrink-0" title="Eliminar">
                       <Trash2 size={14} />
                     </button>
