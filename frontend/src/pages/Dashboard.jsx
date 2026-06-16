@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getDashboard, saveWeight, uploadAvatar, getBodyComposition, getMeasurementsHistory } from '../api'
+import { getDashboard, saveWeight, uploadAvatar, getBodyComposition, getMeasurementsHistory, changePassword } from '../api'
 import Navbar from '../components/Navbar'
 import { Flame, Calendar, Trophy, Activity, Dumbbell, ArrowRight, Weight, Camera, TrendingUp, Heart, Shield } from 'lucide-react'
 
@@ -39,6 +39,10 @@ export default function Dashboard() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [composition, setComposition] = useState(null)
   const [measHistory, setMeasHistory] = useState([])
+  const [pwCurrent, setPwCurrent] = useState('')
+  const [pwNew, setPwNew] = useState('')
+  const [pwMsg, setPwMsg] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
   const fileInputRef = useRef()
   const navigate = useNavigate()
   const token = localStorage.getItem('token')
@@ -80,6 +84,17 @@ export default function Dashboard() {
       localStorage.setItem('user', JSON.stringify(updatedUser))
       window.location.reload()
     } catch { setAvatarUploading(false) }
+  }
+
+  const handleChangePw = async e => {
+    e.preventDefault(); setPwMsg(''); setPwSaving(true)
+    try {
+      await changePassword({ document_id: user.document_id, current_password: pwCurrent, new_password: pwNew })
+      setPwMsg('Contraseña actualizada correctamente')
+      setPwCurrent(''); setPwNew('')
+    } catch (err) {
+      setPwMsg(err.response?.data?.error || 'Error al cambiar contraseña')
+    } finally { setPwSaving(false) }
   }
 
   const chartData = (key) => measHistory.filter(m => m[key] > 0).map(m => ({ value: m[key], date: m.date }))
@@ -255,6 +270,19 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500 mt-2">Último registro: {new Date(data.latestWeight.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long' })}</p>
             )}
           </div>
+        </div>
+
+        {/* Password change */}
+        <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Cambiar contraseña</h2>
+          <form onSubmit={handleChangePw} className="flex flex-col sm:flex-row gap-2">
+            <input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="Contraseña actual" required minLength={6} className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 transition" />
+            <input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="Nueva contraseña (6+ caracteres)" required minLength={6} className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 transition" />
+            <button type="submit" disabled={pwSaving} className="px-4 py-2 bg-gym-500 hover:bg-gym-400 text-white font-bold text-sm rounded-lg transition shadow-lg disabled:opacity-50 whitespace-nowrap">
+              {pwSaving ? 'Guardando...' : 'Cambiar'}
+            </button>
+          </form>
+          {pwMsg && <p className={`text-xs mt-2 ${pwMsg.includes('correctamente') ? 'text-emerald-400' : 'text-gym-400'}`}>{pwMsg}</p>}
         </div>
 
         <div className="grid grid-cols-4 gap-3 mb-8">

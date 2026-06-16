@@ -177,4 +177,7 @@ export const uploadAvatar = (file) => {
   }).then(r => r.data)
 }
 
+export const changePassword = (data) =>
+  api.put('/auth/password', data).then(r => r.data)
+
 export default api

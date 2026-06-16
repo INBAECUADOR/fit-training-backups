@@ -128,6 +128,14 @@ async function getDb() {
     author TEXT DEFAULT ''
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    credential TEXT NOT NULL,
+    success INTEGER NOT NULL DEFAULT 0,
+    ip TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   saveDb();
   return db;
 }

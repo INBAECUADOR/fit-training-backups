@@ -30,6 +30,7 @@ router.post('/users', async (req, res) => {
   try {
     const { document_id, email, name, password, membership_start_date, membership_end_date } = req.body;
     if (!document_id || !name || !password) return res.status(400).json({ error: 'document_id, name y password son requeridos' });
+    if (password.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
     const db = await getDb();
     const existing = db.exec(`SELECT id FROM users WHERE document_id = ?`, [document_id]);
     if (existing.length > 0 && existing[0].values.length > 0) {
