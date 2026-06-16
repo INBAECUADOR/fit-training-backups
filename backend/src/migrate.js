@@ -5,6 +5,10 @@ async function migrate(db) {
   const qOne = (sql, params) => { const r = db.exec(sql, params); return r.length && r[0].values.length ? r[0].values[0] : null; };
   
   console.log('Running migrations...');
+
+  // Ensure required columns exist on global_exercises (safe to run multiple times)
+  try { q("ALTER TABLE global_exercises ADD COLUMN name_es TEXT DEFAULT ''", []); } catch (e) {}
+  try { q("ALTER TABLE global_exercises ADD COLUMN ge_id TEXT DEFAULT ''", []); } catch (e) {}
   
   // 0. Fix admin name
   q("UPDATE users SET name = 'Admin' WHERE id = 1 AND name != 'Admin'", []);
