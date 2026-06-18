@@ -35,6 +35,33 @@ app.use('/api/avatar', avatarRoutes);
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: https://app.enriquezmania.com/sitemap.xml`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const urls = [
+    { loc: 'https://app.enriquezmania.com/', priority: '1.0', changefreq: 'weekly' },
+    { loc: 'https://app.enriquezmania.com/login', priority: '0.6', changefreq: 'monthly' },
+    { loc: 'https://app.enriquezmania.com/routine', priority: '0.7', changefreq: 'weekly' },
+    { loc: 'https://app.enriquezmania.com/diet', priority: '0.7', changefreq: 'weekly' },
+    { loc: 'https://app.enriquezmania.com/evolution', priority: '0.8', changefreq: 'weekly' },
+    { loc: 'https://app.enriquezmania.com/pr-board', priority: '0.6', changefreq: 'weekly' },
+    { loc: 'https://app.enriquezmania.com/calories', priority: '0.6', changefreq: 'monthly' },
+    { loc: 'https://app.enriquezmania.com/manual', priority: '0.5', changefreq: 'monthly' },
+    { loc: 'https://app.enriquezmania.com/ai-agent', priority: '0.8', changefreq: 'weekly' },
+  ];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `  <url>
+    <loc>${u.loc}</loc>
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+  res.header('Content-Type', 'application/xml').send(xml);
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
 });

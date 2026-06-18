@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
+import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
 import Routine from './pages/Routine'
 import Diet from './pages/Diet'
@@ -26,6 +27,11 @@ function AdminRoute({ children }) {
   return children
 }
 
+function PublicHome() {
+  const token = localStorage.getItem('token')
+  return token ? <Dashboard /> : <Landing />
+}
+
 export default function App() {
   return (
     <ToastProvider>
@@ -33,7 +39,7 @@ export default function App() {
       <div className="flex-1">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/" element={<PublicHome />} />
           <Route path="/routine" element={<PrivateRoute><Routine /></PrivateRoute>} />
           <Route path="/diet" element={<PrivateRoute><Diet /></PrivateRoute>} />
           <Route path="/evolution" element={<PrivateRoute><Evolution /></PrivateRoute>} />
@@ -42,6 +48,7 @@ export default function App() {
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="/ai-agent" element={<AdminRoute><AgentIA /></AdminRoute>} />
           <Route path="/manual" element={<PrivateRoute><Manual /></PrivateRoute>} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
