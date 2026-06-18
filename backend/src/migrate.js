@@ -444,10 +444,14 @@ async function migrate(db) {
     if (!uid) continue;
     const existing = qOne("SELECT id FROM measurements WHERE user_id = ? AND date(created_at) = ?", [uid, dateStr]);
     if (existing) continue;
+    // calf column missing from data, inject null before height
+    vals.splice(12, 0, null);
     q("INSERT INTO measurements (user_id, shoulders, chest, back, neck, biceps, forearms, wrist, mid_abdomen, waist, hips, thigh, mid_thigh, calf, height, weight, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [uid, vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9], vals[10], vals[11], vals[12], vals[13], vals[14], dateStr]);
     measInserted++;
   }
+  // Fix existing rows where weight IS NULL (column misalignment: height→calf, weight→height)
+  q("UPDATE measurements SET weight = height, height = calf, calf = NULL WHERE weight IS NULL AND height IS NOT NULL AND calf IS NOT NULL");
   if (measInserted) console.log('Inserted', measInserted, 'measurements from report');
 
   console.log('Migration complete');

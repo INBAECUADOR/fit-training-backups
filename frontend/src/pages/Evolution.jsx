@@ -19,6 +19,7 @@ export default function Evolution() {
   const [photos, setPhotos] = useState({ photo1: null, photo2: null, photo3: null, photo4: null })
   const [photoPreviews, setPhotoPreviews] = useState({ photo1: '', photo2: '', photo3: '', photo4: '' })
   const [expandedPhoto, setExpandedPhoto] = useState(null)
+  const [measDate, setMeasDate] = useState(new Date().toISOString().split('T')[0])
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function Evolution() {
     if (photos.photo2) fd.append('photo2', photos.photo2)
     if (photos.photo3) fd.append('photo3', photos.photo3)
     if (photos.photo4) fd.append('photo4', photos.photo4)
+    fd.append('created_at', measDate)
     try {
       await saveMeasurement(fd)
       const updated = await getMeasurements()
@@ -268,6 +270,28 @@ export default function Evolution() {
                 </div>
               </div>
 
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-gray-400 mb-1">Fecha de la medición</label>
+                <input type="date" value={measDate} onChange={e => setMeasDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 mb-2" />
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Hoy', days: 0 },
+                    { label: 'Ayer', days: 1 },
+                    { label: '7 días', days: 7 },
+                    { label: '15 días', days: 15 },
+                    { label: '30 días', days: 30 },
+                  ].map(opt => {
+                    const d = new Date(Date.now() - opt.days * 86400000).toISOString().split('T')[0]
+                    return (
+                      <button key={opt.label} type="button" onClick={() => setMeasDate(d)}
+                        className={`px-2 py-1 text-[10px] font-bold rounded-lg transition ${measDate === d ? 'bg-gym-400 text-white' : 'bg-gym-700/50 text-gray-400 hover:bg-gym-700 hover:text-white'}`}>
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
               <div className="mb-4">
                 <label className="block text-xs font-medium text-gray-400 mb-1">Notas</label>
                 <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
