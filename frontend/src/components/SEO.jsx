@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 const SITE = 'EnriquezMania - Entrenamiento Personalizado'
 const BASE = 'https://app.enriquezmania.com'
-const DEFAULT_DESC = 'App de entrenamiento personalizado con IA. Generá rutinas, dieta y hacé seguimiento de tu evolución con fotos y métricas.'
+const DEFAULT_DESC = 'App de entrenamiento personalizado. Generá rutinas, dieta y hacé seguimiento de tu evolución con fotos y métricas.'
 const DEFAULT_IMG = 'https://enriquezmania.com/wp-content/uploads/2024/08/logo.png'
 
 const PAGES = {
@@ -14,7 +14,7 @@ const PAGES = {
   '/pr-board': { title: `Records — ${SITE}`, desc: 'Tus marcas personales en cada ejercicio.' },
   '/calories': { title: `Calorías — ${SITE}`, desc: 'Calculá y registrá tus calorías diarias con nuestra base de alimentos.' },
   '/admin': { title: `Admin — ${SITE}`, desc: 'Panel de administración de la plataforma.' },
-  '/ai-agent': { title: `Agente IA — ${SITE}`, desc: 'Generá rutinas y dietas personalizadas con inteligencia artificial.' },
+  '/ai-agent': { title: `Generador — ${SITE}`, desc: 'Generá rutinas y dietas personalizadas automáticamente.' },
   '/manual': { title: `Manual de Usuario — ${SITE}`, desc: 'Guía completa de uso de la plataforma EnriquezMania.' },
 }
 

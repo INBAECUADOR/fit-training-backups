@@ -1,11 +1,11 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
-import { Dumbbell, UtensilsCrossed, TrendingUp, Camera, Bot, Trophy, ChevronRight, Sparkles, Check, ChartNoAxesCombined, Smartphone, Shield } from 'lucide-react'
+import { Dumbbell, UtensilsCrossed, TrendingUp, Camera, ClipboardList, Trophy, ChevronRight, Sparkles, Check, ChartNoAxesCombined, Smartphone, Shield } from 'lucide-react'
 
 const FEATURES = [
   { icon: Dumbbell, title: 'Rutinas Personalizadas', desc: 'Planes de entrenamiento adaptados a tu objetivo, nivel y días disponibles.' },
-  { icon: Bot, title: 'Agente IA', desc: 'Generá rutinas y dietas completas con inteligencia artificial en segundos.' },
+  { icon: ClipboardList, title: 'Plan Completo', desc: 'Rutinas y dietas generadas automáticamente según tu objetivo y nivel.' },
   { icon: UtensilsCrossed, title: 'Dieta Inteligente', desc: 'Plan alimenticio con macronutrientes calculados según tu meta.' },
   { icon: Camera, title: 'Fotos de Progreso', desc: 'Registrá tu evolución visual con fotos frontal, espalda y lateral.' },
   { icon: TrendingUp, title: 'Métricas Detalladas', desc: 'Seguimiento de peso, medidas corporales y composición. +15 medidas.' },
@@ -14,7 +14,7 @@ const FEATURES = [
 
 const STEPS = [
   { num: '01', title: 'Configuración Inicial', desc: 'El entrenador configura tu perfil con tu objetivo, experiencia y equipo disponible.' },
-  { num: '02', title: 'Plan Personalizado', desc: 'El Agente IA genera tu rutina y dieta exacta para vos. Revisá y ajustá.' },
+  { num: '02', title: 'Plan Personalizado', desc: 'Se genera tu rutina y dieta exacta para vos. Revisá y ajustá según prefieras.' },
   { num: '03', title: 'Seguimiento Semanal', desc: 'Registrá tus pesos, medidas y fotos. La app muestra tu evolución en gráficos.' },
 ]
 
@@ -62,7 +62,7 @@ export default function Landing() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
             Tu Entrenamiento{' '}
             <span className="bg-gradient-to-r from-gym-200 via-gym-300 to-orange-400 bg-clip-text text-transparent">
-              Personalizado con IA
+              Personalizado
             </span>
           </h1>
           <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -205,7 +205,7 @@ export default function Landing() {
                 Consultar<span className="text-sm font-normal text-gray-500"></span>
               </p>
               <ul className="space-y-3 mb-8">
-                {['Todo lo de Free', 'Agente IA (rutina + dieta)', 'Fotos de progreso', 'Dieta personalizada', 'Dashboard admin multi-usuario', 'Soporte prioritario'].map((item, i) => (
+                {['Todo lo de Free', 'Rutina + Dieta personalizada', 'Fotos de progreso', 'Dashboard admin multi-usuario', 'Soporte prioritario'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                     <Check size={16} className="text-emerald-400 shrink-0" /> {item}
                   </li>
