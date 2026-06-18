@@ -204,6 +204,73 @@ router.get('/history', authenticate, async (req, res) => {
   }
 });
 
+router.put('/:id', authenticate, upload.fields([
+  { name: 'photo1', maxCount: 1 },
+  { name: 'photo2', maxCount: 1 },
+  { name: 'photo3', maxCount: 1 },
+  { name: 'photo4', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const db = await getDb();
+    const existing = db.exec('SELECT user_id, photo1, photo2, photo3, photo4 FROM measurements WHERE id = ?', [req.params.id]);
+    if (!existing[0]) return res.status(404).json({ error: 'No encontrado' });
+    const row = existing[0].values[0];
+    const ownerId = row[0];
+    const uid = await targetUser(req);
+    if (uid !== ownerId) return res.status(403).json({ error: 'Sin permiso' });
+
+    const { weight, chest, waist, arms, legs, notes,
+            height, neck, shoulders, back, biceps, forearms, wrist,
+            mid_abdomen, hips, thigh, mid_thigh, calf, created_at } = req.body;
+
+    // Delete old photos if new ones uploaded
+    const oldPhotos = [row[1], row[2], row[3], row[4]];
+    const newPhotos = ['photo1', 'photo2', 'photo3', 'photo4'].map(k =>
+      req.files?.[k] ? '/uploads/measurements/' + req.files[k][0].filename : ''
+    );
+    for (let i = 0; i < 4; i++) {
+      if (newPhotos[i] && oldPhotos[i]) {
+        const p = path.join(__dirname, '..', '..', oldPhotos[i]);
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+      }
+    }
+
+    // Keep old photo URL if no new photo uploaded
+    const photo1 = newPhotos[0] || oldPhotos[0] || '';
+    const photo2 = newPhotos[1] || oldPhotos[1] || '';
+    const photo3 = newPhotos[2] || oldPhotos[2] || '';
+    const photo4 = newPhotos[3] || oldPhotos[3] || '';
+
+    if (created_at) {
+      db.run(`UPDATE measurements SET weight=?, chest=?, waist=?, arms=?, legs=?, notes=?,
+              photo1=?, photo2=?, photo3=?, photo4=?,
+              height=?, neck=?, shoulders=?, back=?, biceps=?, forearms=?, wrist=?,
+              mid_abdomen=?, hips=?, thigh=?, mid_thigh=?, calf=?, created_at=?
+              WHERE id=?`,
+        [weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '',
+         photo1, photo2, photo3, photo4,
+         height || 0, neck || 0, shoulders || 0, back || 0, biceps || 0,
+         forearms || 0, wrist || 0, mid_abdomen || 0, hips || 0,
+         thigh || 0, mid_thigh || 0, calf || 0, created_at, req.params.id]);
+    } else {
+      db.run(`UPDATE measurements SET weight=?, chest=?, waist=?, arms=?, legs=?, notes=?,
+              photo1=?, photo2=?, photo3=?, photo4=?,
+              height=?, neck=?, shoulders=?, back=?, biceps=?, forearms=?, wrist=?,
+              mid_abdomen=?, hips=?, thigh=?, mid_thigh=?, calf=?
+              WHERE id=?`,
+        [weight || 0, chest || 0, waist || 0, arms || 0, legs || 0, notes || '',
+         photo1, photo2, photo3, photo4,
+         height || 0, neck || 0, shoulders || 0, back || 0, biceps || 0,
+         forearms || 0, wrist || 0, mid_abdomen || 0, hips || 0,
+         thigh || 0, mid_thigh || 0, calf || 0, req.params.id]);
+    }
+    saveDb();
+    res.json({ message: 'Medida actualizada' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar medida' });
+  }
+});
+
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const db = await getDb();

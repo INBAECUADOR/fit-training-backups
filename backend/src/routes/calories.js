@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { authenticate } = require('../middleware/auth');
+const { getDb } = require('../database');
 const foods = require('../foods-db');
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
@@ -55,11 +56,16 @@ router.post('/analyze', authenticate, upload.single('image'), async (req, res) =
   try {
     if (!req.file) return res.status(400).json({ error: 'Imagen requerida' });
 
-    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
+    let apiKey = process.env.OPENROUTER_API_KEY || process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      const db = await getDb();
+      const r = db.exec('SELECT value FROM config WHERE key = ?', ['openrouter_api_key']);
+      if (r.length && r[0].values.length) apiKey = r[0].values[0][0];
+    }
     if (!apiKey) {
       return res.status(503).json({
         error: 'API no configurada',
-        message: 'Configurá OPENROUTER_API_KEY (gratis en openrouter.ai) o usá el modo "Manual"',
+        message: 'Configurá la API key en Admin → Agente IA o usá el modo "Manual"',
       });
     }
 
@@ -78,6 +84,20 @@ Analizá la imagen y devolvé SOLO un JSON válido (sin markdown, sin texto adic
 }
 Si no podés identificar ningún alimento, devolvé { "foods": [], "totalCalories": 0, "mealType": "desconocido" }.`;
 
+    // Find a free vision model dynamically
+    let visionModel = 'nvidia/nemotron-nano-12b-v2-vl:free'; // fallback
+    try {
+      const res = await globalThis.fetch('https://openrouter.ai/api/v1/models');
+      if (res.ok) {
+        const data = await res.json();
+        const freeVision = (data.data || data.models || []).filter(m => {
+          const p = m.pricing || {};
+          return parseFloat(p.prompt) === 0 && parseFloat(p.completion) === 0 && (m.architecture?.modality === 'multimodal' || m.id.includes('vision') || m.id.includes('vl'));
+        });
+        if (freeVision.length) visionModel = freeVision[0].id;
+      }
+    } catch {}
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     const response = await fetch(OPENROUTER_API, {
@@ -89,7 +109,7 @@ Si no podés identificar ningún alimento, devolvé { "foods": [], "totalCalorie
         'X-Title': 'FitTrainingApp',
       },
       body: JSON.stringify({
-        model: 'nvidia/nemotron-nano-12b-v2-vl:free',
+        model: visionModel,
         messages: [{
           role: 'user',
           content: [

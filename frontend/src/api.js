@@ -49,6 +49,13 @@ export const saveMeasurement = (data, params) => {
 export const deleteMeasurement = (id) =>
   api.delete(`/measurements/${id}`).then(r => r.data)
 
+export const updateMeasurement = (id, data, params) => {
+  if (data instanceof FormData) {
+    return api.put(`/measurements/${id}`, data, { params, headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+  }
+  return api.put(`/measurements/${id}`, data, { params }).then(r => r.data)
+}
+
 export const getWeightHistory = () =>
   api.get('/measurements/weight').then(r => r.data)
 
@@ -162,6 +169,12 @@ export const aiApprovePlan = (data) =>
 
 export const adminGetMotivation = () =>
   api.get('/admin/motivation').then(r => r.data)
+
+export const adminGetApiKey = () =>
+  api.get('/admin/api-key').then(r => r.data)
+
+export const adminSetApiKey = (key) =>
+  api.put('/admin/api-key', { key }).then(r => r.data)
 
 export const adminCreateMotivation = (data) =>
   api.post('/admin/motivation', data).then(r => r.data)

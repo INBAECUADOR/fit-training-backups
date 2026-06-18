@@ -5,10 +5,10 @@ import {
   CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Legend, Filler
 } from 'chart.js'
-import { getMeasurements, saveMeasurement, deleteMeasurement, downloadExport } from '../api'
+import { getMeasurements, saveMeasurement, updateMeasurement, deleteMeasurement, downloadExport } from '../api'
 import Navbar from '../components/Navbar'
 import { useToast } from '../components/Toast'
-import { Download, Trash2, Camera } from 'lucide-react'
+import { Download, Trash2, Camera, Pencil } from 'lucide-react'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -20,11 +20,40 @@ export default function Evolution() {
   const [photoPreviews, setPhotoPreviews] = useState({ photo1: '', photo2: '', photo3: '', photo4: '' })
   const [expandedPhoto, setExpandedPhoto] = useState(null)
   const [measDate, setMeasDate] = useState(new Date().toISOString().split('T')[0])
+  const [editingId, setEditingId] = useState(null)
   const { showToast } = useToast()
 
   useEffect(() => {
     getMeasurements().then(setMeasurements).catch(() => showToast('Error al cargar mediciones', 'error'))
   }, [])
+
+  const handleEdit = (m) => {
+    setEditingId(m.id)
+    setForm({
+      weight: String(m.weight || ''),
+      height: String(m.height || ''),
+      neck: String(m.neck || ''),
+      shoulders: String(m.shoulders || ''),
+      chest: String(m.chest || ''),
+      waist: String(m.waist || ''),
+      arms: String(m.arms || ''),
+      legs: String(m.legs || ''),
+      back: String(m.back || ''),
+      biceps: String(m.biceps || ''),
+      forearms: String(m.forearms || ''),
+      wrist: String(m.wrist || ''),
+      mid_abdomen: String(m.mid_abdomen || ''),
+      hips: String(m.hips || ''),
+      thigh: String(m.thigh || ''),
+      mid_thigh: String(m.mid_thigh || ''),
+      calf: String(m.calf || ''),
+      notes: m.notes || '',
+    })
+    setMeasDate(m.date?.slice(0, 10) || new Date().toISOString().split('T')[0])
+    setPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
+    setPhotoPreviews({ photo1: m.photo1 || '', photo2: m.photo2 || '', photo3: m.photo3 || '', photo4: m.photo4 || '' })
+    setShowForm(true)
+  }
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -38,7 +67,11 @@ export default function Evolution() {
     if (photos.photo4) fd.append('photo4', photos.photo4)
     fd.append('created_at', measDate)
     try {
-      await saveMeasurement(fd)
+      if (editingId) {
+        await updateMeasurement(editingId, fd)
+      } else {
+        await saveMeasurement(fd)
+      }
       const updated = await getMeasurements()
       setMeasurements(updated)
       const empty = Object.fromEntries(fields.map(k => [k, '']))
@@ -46,7 +79,8 @@ export default function Evolution() {
       setPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
       setPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
       setShowForm(false)
-      showToast('Medición guardada', 'success')
+      setEditingId(null)
+      showToast(editingId ? 'Medición actualizada' : 'Medición guardada', 'success')
     } catch { showToast('Error al guardar medición', 'error') }
   }
 
@@ -109,7 +143,7 @@ export default function Evolution() {
               <Download size={16} />
             </button>
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => { setShowForm(v => !v); setEditingId(null); }}
               className={`px-4 py-2 rounded-xl font-bold text-sm transition ${
                 showForm
                   ? 'bg-gym-700 text-gray-300 hover:bg-gym-600'
@@ -187,7 +221,7 @@ export default function Evolution() {
 
         {showForm && (
             <form onSubmit={handleSubmit} className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-6 mb-8">
-              <h3 className="text-sm font-bold text-white mb-4">Nueva Medición</h3>
+              <h3 className="text-sm font-bold text-white mb-4">{editingId ? 'Editar Medición' : 'Nueva Medición'}</h3>
 
               <div className="mb-4">
                 <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Generales</p>
@@ -317,9 +351,14 @@ export default function Evolution() {
                 <span className="text-gray-400 text-sm">
                   {new Date(m.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
                 </span>
-                <button onClick={() => handleDeleteMeas(m.id)} className="p-1.5 text-gray-400 hover:text-gym-400 transition" title="Eliminar">
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => handleEdit(m)} className="p-1.5 text-gray-400 hover:text-gym-300 transition" title="Editar">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => handleDeleteMeas(m.id)} className="p-1.5 text-gray-400 hover:text-gym-400 transition" title="Eliminar">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300">
                 <span className="text-gym-400 font-bold">{m.weight} kg</span>

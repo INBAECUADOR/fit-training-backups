@@ -4,36 +4,52 @@ const { authenticate } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 
 const router = express.Router();
-router.use(authenticate, requireAdmin);
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-const MEAL_TYPES = ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner'];
-const MEAL_LABELS = { breakfast: 'Desayuno', morning_snack: 'Snack Mañana', lunch: 'Almuerzo', afternoon_snack: 'Snack Tarde', dinner: 'Cena' };
+let cachedModels = [];
+let lastFetch = 0;
+const CACHE_TTL = 3600000;
 
-router.post('/generate', async (req, res) => {
+async function getFreeModels() {
+  const now = Date.now();
+  if (cachedModels.length && now - lastFetch < CACHE_TTL) return cachedModels;
   try {
-    const { age, weight, height, gender, goal, experience, trainingDays, mealsPerDay, allergies, conditions, equipment, observations } = req.body;
+    const res = await globalThis.fetch('https://openrouter.ai/api/v1/models');
+    if (!res.ok) return [];
+    const data = await res.json();
+    const models = (data.data || data.models || [])
+      .filter(m => { const p = m.pricing || {}; return parseFloat(p.prompt) === 0 && parseFloat(p.completion) === 0; })
+      .map(m => m.id);
+    if (models.length) { cachedModels = models; lastFetch = now; }
+    return models;
+  } catch { return []; }
+}
 
+const { generateLocalPlan, generateRoutines, generateDiet, getExercisePool } = require('./ai-local');
+const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+router.post('/generate', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const body = req.body;
+    const { age, trainingDays, mealsPerDay } = body;
     if (!age || !trainingDays || !mealsPerDay) {
       return res.status(400).json({ error: 'Edad, días de entrenamiento y comidas al día son requeridos' });
     }
 
+    // Try OpenRouter if API key is configured
     let apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       const db = await getDb();
       const r = db.exec('SELECT value FROM config WHERE key = ?', ['openrouter_api_key']);
       if (r.length && r[0].values.length) apiKey = r[0].values[0][0];
     }
-    if (!apiKey) {
-      return res.status(503).json({ error: 'API no configurada' });
-    }
 
-    const daysCount = Math.min(parseInt(trainingDays) || 5, 7);
-    const userDays = DAYS.slice(0, daysCount);
+    if (apiKey) {
+      const daysCount = Math.min(parseInt(trainingDays) || 5, 7);
+      const userDays = DAYS.slice(0, daysCount);
 
-    const splitInstruction = observations && observations.toLowerCase().includes('tren superior') ? `
+      const splitInstruction = body.observations && body.observations.toLowerCase().includes('tren superior') ? `
 DISTRIBUCIÓN POR DÍA (basada en tu observación de 2 días tren superior + 3 piernas):
 - Lunes: PIERNA (cuádriceps, glúteos, femoral, pantorrilla)
 - Martes: TREN SUPERIOR (pecho, espalda, hombro, bíceps, tríceps)
@@ -46,21 +62,21 @@ ${userDays.map((d, i) => {
   return `- ${d}: ${splits[i] || 'CUERPO COMPLETO'}`;
 }).join('\n')}`;
 
-    const prompt = `Eres un entrenador personal experto en fitness y nutrición. Genera una rutina EXACTAMENTE como se especifica abajo.
+      const prompt = `Eres un entrenador personal experto en fitness y nutrición. Genera una rutina EXACTAMENTE como se especifica abajo.
 
 DATOS DEL CLIENTE:
-- Edad: ${age} años
-- Peso: ${weight || '?'} kg
-- Altura: ${height || '?'} cm
-- Género: ${gender || 'no especificado'}
-- Objetivo: ${goal || 'tonificar'}
-- Experiencia: ${experience || 'principiante'}
+- Edad: ${body.age} años
+- Peso: ${body.weight || '?'} kg
+- Altura: ${body.height || '?'} cm
+- Género: ${body.gender || 'no especificado'}
+- Objetivo: ${body.goal || 'tonificar'}
+- Experiencia: ${body.experience || 'principiante'}
 - Días de entrenamiento: ${trainingDays} (${userDays.join(', ')})
 - Comidas por día: ${mealsPerDay}
-- Alergias/intolerancias: ${allergies || 'ninguna'}
-- Condiciones/lesiones: ${conditions || 'ninguna'}
-- Equipo disponible: ${equipment || 'gimnasio completo'}
-${observations ? `\nOBSERVACIONES DEL ENTRENADOR:\n${observations}\n` : ''}
+- Alergias/intolerancias: ${body.allergies || 'ninguna'}
+- Condiciones/lesiones: ${body.conditions || 'ninguna'}
+- Equipo disponible: ${body.equipment || 'gimnasio completo'}
+${body.observations ? `\nOBSERVACIONES DEL ENTRENADOR:\n${body.observations}\n` : ''}
 
 ${splitInstruction}
 
@@ -103,75 +119,54 @@ RESPONDE SOLO CON UN JSON VÁLIDO, SIN MARKDOWN, SIN TEXTO ADICIONAL.
 Días a incluir en routines: ${userDays.join(', ')}
 Días a incluir en diet: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo`;
 
-
-
-    const FREE_MODELS = [
-      'openrouter/free',
-      'liquid/lfm-2.5-1.2b-instruct:free',
-      'poolside/laguna-xs.2:free',
-    ];
-
-    let lastError = '';
-    for (const model of FREE_MODELS) {
-      // Short delay between retries to avoid rate limits
-      if (lastError) await new Promise(r => setTimeout(r, 3000));
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-      try {
-        const response = await globalThis.fetch(OPENROUTER_API, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'http://localhost:3001',
-            'X-Title': 'FitTrainingApp',
-          },
-          body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.5, max_tokens: 8192 }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-
-        if (!response.ok) {
-          lastError = `${response.status}: ${(await response.text()).substring(0, 200)}`;
-          console.error(`Model ${model} failed:`, lastError);
-          continue;
+      const FREE_MODELS = (await getFreeModels()).slice(0, 10);
+      if (FREE_MODELS.length) {
+        let lastError = '';
+        for (const model of FREE_MODELS) {
+          if (lastError) await new Promise(r => setTimeout(r, 3000));
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 30000);
+          try {
+            const response = await globalThis.fetch(OPENROUTER_API, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'http://localhost:3001',
+                'X-Title': 'FitTrainingApp',
+              },
+              body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.5, max_tokens: 8192 }),
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            if (!response.ok) { lastError = `${response.status}: ${(await response.text()).substring(0, 200)}`; console.error(`Model ${model} failed:`, lastError); continue; }
+            const data = await response.json();
+            const msg = data?.choices?.[0]?.message || {};
+            let text = msg.content || msg.reasoning || '{}';
+            let match = text.match(/\{[\s\S]*\}/);
+            if (!match) match = text.match(/\[[\s\S]*\]/);
+            let clean = (match ? match[0] : text).replace(/```json\s*/gi, '').replace(/```\s*/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/,(\s*[}\]])/g, '$1').trim();
+            let result;
+            try { result = JSON.parse(clean); } catch { continue; }
+            if (result.routines && result.diet) return res.json(result);
+          } catch (err) { clearTimeout(timeout); lastError = err.message; console.error(`Model ${model} error:`, err.message); continue; }
         }
-
-        const data = await response.json();
-        const msg = data?.choices?.[0]?.message || {};
-        let text = msg.content || msg.reasoning || '{}';
-        let match = text.match(/\{[\s\S]*\}/);
-        if (!match) match = text.match(/\[[\s\S]*\]/);
-        let clean = (match ? match[0] : text)
-          .replace(/```json\s*/gi, '').replace(/```\s*/g, '')
-          .replace(/[\u200B-\u200D\uFEFF]/g, '')
-          .replace(/,(\s*[}\]])/g, '$1').trim();
-
-        let result;
-        try { result = JSON.parse(clean); } catch { continue; }
-
-        if (result.routines && result.diet) {
-          return res.json(result);
-        }
-      } catch (err) {
-        clearTimeout(timeout);
-        lastError = err.message;
-        console.error(`Model ${model} error:`, err.message);
-        continue;
+        console.error('OpenRouter all models failed. Falling back to local generator. Last error:', lastError);
       }
     }
 
-    console.error('All models failed. Last error:', lastError);
-    return res.status(502).json({ error: 'Error al generar el plan', detail: lastError });
+    // Fallback: local generator (works without API key)
+    const pool = await getExercisePool();
+    const baseInfo = generateLocalPlan(body);
+    const routines = generateRoutines(body.goal || 'tonificar', trainingDays, body.observations, pool);
+    const diet = generateDiet(body.goal || 'tonificar', mealsPerDay, body.allergies);
+    return res.json({ ...baseInfo, routines, diet, generated: 'local' });
   } catch (err) {
-    if (err.name === 'AbortError') {
-      return res.status(504).json({ error: 'Tiempo de espera agotado' });
-    }
     res.status(500).json({ error: 'Error al generar plan', detail: err.message });
   }
 });
 
-router.post('/approve', async (req, res) => {
+router.post('/approve', authenticate, requireAdmin, async (req, res) => {
   try {
     const { userId, routines, diet, keepExisting } = req.body;
     if (!userId || !routines) {

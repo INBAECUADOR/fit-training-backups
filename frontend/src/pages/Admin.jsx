@@ -9,8 +9,9 @@ import {
   getMeasurements, saveMeasurement, deleteMeasurement,
   aiGeneratePlan, aiApprovePlan,
   adminGetMotivation, adminCreateMotivation, adminDeleteMotivation,
+  adminGetApiKey, adminSetApiKey,
 } from '../api'
-import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw, MessageCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw, MessageCircle, Key } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import { useNavigate } from 'react-router-dom'
 
@@ -335,6 +336,13 @@ export default function Admin() {
   const [aiExpandedDay, setAiExpandedDay] = useState(null)
   const [aiSuccess, setAiSuccess] = useState('')
   const [aiAssignUser, setAiAssignUser] = useState('')
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(false)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [apiKeySaving, setApiKeySaving] = useState(false)
+
+  useEffect(() => {
+    if (tab === 'ai') adminGetApiKey().then(r => setApiKeyConfigured(r.configured)).catch(() => {})
+  }, [tab])
 
   const aiUpdate = (key, val) => setAiForm(prev => ({ ...prev, [key]: val }))
 
@@ -1054,6 +1062,37 @@ export default function Admin() {
         {/* ======== TAB: AI AGENT ======== */}
         {tab === 'ai' && (
           <div>
+            {/* API Key config */}
+            <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-4 mb-6">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Key size={16} className={apiKeyConfigured ? 'text-emerald-400' : 'text-gym-400'} />
+                  <span className="text-sm text-white font-semibold">API Key de OpenRouter</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${apiKeyConfigured ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {apiKeyConfigured ? 'Configurada' : 'No configurada'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <input type="password" value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)}
+                  placeholder={apiKeyConfigured ? 'Escribí nueva key para reemplazar...' : 'Ingresá la API key de OpenRouter...'}
+                  className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400" />
+                <button onClick={async () => {
+                  if (!apiKeyInput.trim()) return
+                  setApiKeySaving(true)
+                  try {
+                    await adminSetApiKey(apiKeyInput.trim())
+                    setApiKeyConfigured(true)
+                    setApiKeyInput('')
+                    showToast('API key guardada correctamente', 'success')
+                  } catch { showToast('Error al guardar API key', 'error') }
+                  setApiKeySaving(false)
+                }} disabled={apiKeySaving || !apiKeyInput.trim()}
+                  className="px-4 py-2 bg-gradient-to-r from-gym-400 to-orange-500 text-white rounded-lg font-bold text-sm transition disabled:opacity-50">
+                  {apiKeySaving ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-5">
