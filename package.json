@@ -2,7 +2,7 @@
   "name": "fit-training",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "build": "cd backend && npm install",
     "start": "node backend/src/index.js"
   }
 }
