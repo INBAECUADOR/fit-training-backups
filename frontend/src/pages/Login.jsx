@@ -19,6 +19,7 @@ export default function Login() {
       const payload = isEmail ? { email: credential, password: pass } : { document_id: credential, password: pass }
       const data = await login(payload)
       localStorage.setItem('token', data.token)
+      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
       localStorage.setItem('user', JSON.stringify(data.user))
       navigate('/')
     } catch {

@@ -1,9 +1,21 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fit-training-secret-key-2024';
+function getSecret() {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  return 'dev-secret-do-not-use-in-production';
+}
+
+const JWT_SECRET = getSecret();
 
 function generateToken(userId) {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '15m' });
+}
+
+function generateRefreshToken(userId) {
+  return jwt.sign({ id: userId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 function authenticate(req, res, next) {
@@ -21,4 +33,4 @@ function authenticate(req, res, next) {
   }
 }
 
-module.exports = { generateToken, authenticate };
+module.exports = { generateToken, generateRefreshToken, authenticate, JWT_SECRET };

@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const { getDb } = require('./database');
 const authRoutes = require('./routes/auth');
 const routineRoutes = require('./routes/routines');
@@ -17,8 +19,30 @@ const avatarRoutes = require('./routes/avatar');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+// CORS
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://app.enriquezmania.com';
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? CORS_ORIGIN : '*',
+  credentials: true,
+}));
+
+app.use(express.json({ limit: '10mb' }));
+
+// Global rate limiter for API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.' },
+});
+app.use('/api', apiLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/routines', routineRoutes);
@@ -64,6 +88,18 @@ ${urls.map(u => `  <url>
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (err.message?.includes('Solo se permiten') || err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ error: err.message || 'El archivo excede el tamaño permitido (10MB)' });
+  }
+  if (err.name === 'UnauthorizedError' || err.message?.includes('token')) {
+    return res.status(401).json({ error: 'Sesión inválida' });
+  }
+  res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Error interno del servidor' : err.message });
 });
 
 async function start() {

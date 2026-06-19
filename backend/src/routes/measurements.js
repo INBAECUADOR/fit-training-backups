@@ -1,22 +1,14 @@
 const express = require('express');
 const { getDb, saveDb } = require('../database');
 const { authenticate } = require('../middleware/auth');
-const multer = require('multer');
+const { createDiskUpload } = require('../middleware/upload');
 const path = require('path');
 const fs = require('fs');
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'measurements');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, unique + ext);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = createDiskUpload(UPLOADS_DIR, 10);
 
 const router = express.Router();
 

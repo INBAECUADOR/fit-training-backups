@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const { getDb, saveDb } = require('../database');
-const { generateToken } = require('../middleware/auth');
+const { generateToken, generateRefreshToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -79,11 +79,31 @@ router.post('/login', loginLimiter, async (req, res) => {
     saveDb();
 
     const token = generateToken(user.id);
-    res.json({ token, user: { id: user.id, name: user.name, document_id: user.document_id, email: user.email, role: user.role, membership_end_date: user.membership_end_date, membership_start_date: user.membership_start_date, avatar_url: user.avatar_url } });
+    const refreshToken = generateRefreshToken(user.id);
+    res.json({ token, refreshToken, user: { id: user.id, name: user.name, document_id: user.document_id, email: user.email, role: user.role, membership_end_date: user.membership_end_date, membership_start_date: user.membership_start_date, avatar_url: user.avatar_url } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
+});
+
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken: token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Refresh token requerido' });
+    const jwt = require('jsonwebtoken');
+    const { JWT_SECRET } = require('../middleware/auth');
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.type !== 'refresh') return res.status(401).json({ error: 'Token inválido' });
+    const db = await getDb();
+    const result = db.exec(`SELECT id, name, document_id, email, role, membership_end_date, membership_start_date, avatar_url FROM users WHERE id = ?`, [decoded.id]);
+    if (!result.length || !result[0].values.length) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const row = result[0].values[0];
+    const user = { id: row[0], name: row[1], document_id: row[2], email: row[3], role: row[4], membership_end_date: row[5] || '', membership_start_date: row[6] || '', avatar_url: row[7] || '' };
+    const newToken = generateToken(user.id);
+    const newRefresh = generateRefreshToken(user.id);
+    res.json({ token: newToken, refreshToken: newRefresh, user });
+  } catch { return res.status(401).json({ error: 'Refresh token inválido o expirado' }); }
 });
 
 router.put('/password', async (req, res) => {

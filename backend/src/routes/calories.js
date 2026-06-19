@@ -1,13 +1,13 @@
 const express = require('express');
-const multer = require('multer');
 const { authenticate } = require('../middleware/auth');
 const { getDb } = require('../database');
+const { createImageUpload } = require('../middleware/upload');
 const foods = require('../foods-db');
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = createImageUpload(10);
 
 // Buscar alimentos en la base de datos local
 router.get('/foods/search', authenticate, (req, res) => {
