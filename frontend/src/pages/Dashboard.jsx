@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { getDashboard, saveWeight, uploadAvatar, getBodyComposition, getMeasurementsHistory, changePassword } from '../api'
 import Navbar from '../components/Navbar'
+import { SkeletonDashboard } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
 import { Flame, Calendar, Trophy, Activity, Dumbbell, ArrowRight, Weight, Camera, TrendingUp, Heart, Shield } from 'lucide-react'
 
 function getInitials(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
+  return name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
 }
 
 function MiniChart({ data, color, label, unit }) {
@@ -31,6 +33,20 @@ function MiniChart({ data, color, label, unit }) {
       </svg>
     </div>
   )
+}
+
+const stagger = {
+  animate: { transition: { staggerChildren: 0.06 } }
+}
+
+const fadeUp = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
+}
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.9 },
+  animate: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } }
 }
 
 export default function Dashboard() {
@@ -105,12 +121,7 @@ export default function Dashboard() {
   const chartData = (key) => measHistory.filter(m => m[key] > 0).map(m => ({ value: m[key], date: m.date }))
   const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
-  if (!data) return (
-    <div className="min-h-screen bg-gym-900">
-      <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-gray-500">Cargando dashboard...</div>
-    </div>
-  )
+  if (!data) return <SkeletonDashboard />
 
   const firstName = data.userName?.split(' ')[0] || ''
   const greeting = firstName.toLowerCase().endsWith('a') ? 'Bienvenida' : 'Bienvenido'
@@ -121,7 +132,6 @@ export default function Dashboard() {
   const membershipStartDate = user.membership_start_date ? new Date(user.membership_start_date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : null
   const daysLeft = hasMembership ? Math.ceil((new Date(user.membership_end_date) - new Date()) / (1000 * 60 * 60 * 24)) : 0
 
-  // Build mini calendar for last 30 days
   const today = new Date()
   const calDays = []
   for (let i = 29; i >= 0; i--) {
@@ -133,9 +143,8 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gym-900">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Profile header */}
-        <div className="flex items-center gap-4 mb-8 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5">
+      <motion.div initial="initial" animate="animate" variants={stagger} className="max-w-4xl mx-auto px-4 py-8">
+        <motion.div variants={fadeUp} className="flex items-center gap-4 mb-8 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5">
           <div className="relative shrink-0">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt="Tu foto" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-gym-500 shadow-xl" />
@@ -157,10 +166,9 @@ export default function Dashboard() {
             </p>
             <p className="text-[10px] sm:text-xs text-gym-400/70 mt-1 font-medium tracking-wide">Plataforma hecha por Ing. Jose Luis Enriquez</p>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Membership card */}
-        <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+        <motion.div variants={fadeUp} className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className={`p-2.5 rounded-xl ${hasMembership ? (isExpired ? 'bg-red-500/20' : 'bg-emerald-500/20') : 'bg-gym-700/50'}`}>
@@ -210,19 +218,33 @@ export default function Dashboard() {
               </div>
             )
           })()}
-        </div>
+        </motion.div>
 
-        {/* Motivational quote */}
         {data.motivation && (
-          <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl text-center">
+          <motion.div variants={fadeUp} className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl text-center">
             <p className="text-sm sm:text-base text-gym-200 italic leading-relaxed">&ldquo;{data.motivation.text}&rdquo;</p>
             {data.motivation.author && <p className="text-xs text-gym-400/70 mt-2 font-medium">— {data.motivation.author}</p>}
-          </div>
+          </motion.div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <motion.div variants={fadeUp} className="grid grid-cols-4 gap-3 mb-8">
+          {[
+            { icon: Flame, label: 'Racha', value: data.streak, unit: 'días', color: 'from-gym-400 to-orange-500' },
+            { icon: Calendar, label: 'Entrenos', value: data.totalWorkoutDays, unit: 'días', color: 'from-gym-300 to-amber-500' },
+            { icon: Trophy, label: 'Records', value: data.totalPRs, unit: 'ejerc.', color: 'from-yellow-500 to-amber-400' },
+            { icon: Activity, label: 'Series', value: data.totalResults, unit: 'totales', color: 'from-emerald-400 to-green-500' },
+          ].map(stat => (
+            <motion.div key={stat.label} variants={scaleIn} whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-4 shadow-lg text-center cursor-default`}>
+              <stat.icon size={16} className="text-white/80 mx-auto mb-1.5" />
+              <p className="text-2xl font-extrabold text-white">{stat.value}</p>
+              <p className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">{stat.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {!data.isWeekend && data.routineToday ? (
-            <div className="bg-gradient-to-br from-gym-800 to-gym-900 border border-gym-700/50 rounded-2xl p-6 hover:border-gym-600 transition shadow-xl">
+            <motion.div whileHover={{ y: -2, transition: { duration: 0.2 } }} className="bg-gradient-to-br from-gym-800 to-gym-900 border border-gym-700/50 rounded-2xl p-6 hover:border-gym-600 transition-all shadow-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 bg-gradient-to-br from-gym-400 to-orange-500 rounded-xl shadow-lg">
                   <Dumbbell size={20} className="text-white" />
@@ -238,7 +260,7 @@ export default function Dashboard() {
                   Ver rutina <ArrowRight size={14} />
                 </button>
               </div>
-            </div>
+            </motion.div>
           ) : (
             <div className="bg-gradient-to-br from-gym-800 to-gym-900 border border-gym-700/50 rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-2">
@@ -251,7 +273,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="bg-gradient-to-br from-gym-800 to-gym-900 border border-gym-700/50 rounded-2xl p-6 shadow-xl">
+          <motion.div whileHover={{ y: -2, transition: { duration: 0.2 } }} className="bg-gradient-to-br from-gym-800 to-gym-900 border border-gym-700/50 rounded-2xl p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl shadow-lg">
                 <Weight size={20} className="text-white" />
@@ -266,48 +288,31 @@ export default function Dashboard() {
               </div>
             </div>
             <form onSubmit={handleWeightSave} className="flex gap-2">
-              <input type="number" step="0.1" value={weightInput} onChange={e => setWeightInput(e.target.value)} placeholder="Registrá tu peso" className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 transition" />
-              <button type="submit" className={`px-4 py-2 rounded-lg font-bold text-sm transition shadow-lg ${weightSaved ? 'bg-emerald-500 text-white' : 'bg-gradient-to-r from-gym-400 to-orange-500 text-white hover:from-red-500 hover:to-orange-600'}`}>
+              <input type="number" step="0.1" value={weightInput} onChange={e => setWeightInput(e.target.value)} placeholder="Registrá tu peso" className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all" />
+              <button type="submit" className={`px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-lg ${weightSaved ? 'bg-emerald-500 text-white scale-in' : 'bg-gradient-to-r from-gym-400 to-orange-500 text-white hover:brightness-110'}`}>
                 {weightSaved ? '✓' : 'Guardar'}
               </button>
             </form>
             {data.latestWeight && (
               <p className="text-xs text-gray-500 mt-2">Último registro: {new Date(data.latestWeight.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long' })}</p>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        {/* Password change */}
-        <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+        <motion.div variants={fadeUp} className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Cambiar contraseña</h2>
           <form onSubmit={handleChangePw} className="flex flex-col sm:flex-row gap-2">
-            <input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="Contraseña actual" required minLength={6} className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 transition" />
-            <input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="Nueva contraseña (6+ caracteres)" required minLength={6} className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 transition" />
-            <button type="submit" disabled={pwSaving} className="px-4 py-2 bg-gym-500 hover:bg-gym-400 text-white font-bold text-sm rounded-lg transition shadow-lg disabled:opacity-50 whitespace-nowrap">
+            <input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="Contraseña actual" required minLength={6} className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all" />
+            <input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="Nueva contraseña (6+ caracteres)" required minLength={6} className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all" />
+            <button type="submit" disabled={pwSaving} className="px-4 py-2 bg-gym-500 hover:bg-gym-400 text-white font-bold text-sm rounded-lg transition-all shadow-lg disabled:opacity-50 whitespace-nowrap">
               {pwSaving ? 'Guardando...' : 'Cambiar'}
             </button>
           </form>
           {pwMsg && <p className={`text-xs mt-2 ${pwMsg.includes('correctamente') ? 'text-emerald-400' : 'text-gym-400'}`}>{pwMsg}</p>}
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-4 gap-3 mb-8">
-          {[
-            { icon: Flame, label: 'Racha', value: data.streak, unit: 'días', color: 'from-gym-400 to-orange-500' },
-            { icon: Calendar, label: 'Entrenos', value: data.totalWorkoutDays, unit: 'días', color: 'from-gym-300 to-amber-500' },
-            { icon: Trophy, label: 'Records', value: data.totalPRs, unit: 'ejerc.', color: 'from-yellow-500 to-amber-400' },
-            { icon: Activity, label: 'Series', value: data.totalResults, unit: 'totales', color: 'from-emerald-400 to-green-500' },
-          ].map(stat => (
-            <div key={stat.label} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-4 shadow-lg text-center`}>
-              <stat.icon size={16} className="text-white/80 mx-auto mb-1.5" />
-              <p className="text-2xl font-extrabold text-white">{stat.value}</p>
-              <p className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Body composition card */}
         {composition && composition.bf && (
-          <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+          <motion.div variants={fadeUp} className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-3">
               <Heart size={16} className="text-red-400" />
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">Composición corporal</h2>
@@ -337,12 +342,11 @@ export default function Dashboard() {
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider">Peso total</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* Evolution charts */}
         {measHistory.length > 1 && (
-          <div className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+          <motion.div variants={fadeUp} className="mb-6 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp size={16} className="text-gym-300" />
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">Evolución</h2>
@@ -361,11 +365,10 @@ export default function Dashboard() {
                 <MiniChart data={chartData('arms')} color="#22c55e" label="Brazos" unit="cm" />
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* Workout calendar + Recovery */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-3">
               <Calendar size={14} className="text-gym-300" />
@@ -375,7 +378,7 @@ export default function Dashboard() {
               {calDays.map(d => {
                 const trained = data.workoutDays?.includes(d)
                 return (
-                  <div key={d} className={`aspect-square rounded-sm ${trained ? 'bg-emerald-500' : 'bg-gym-800'}`}
+                  <motion.div key={d} whileHover={{ scale: 1.3 }} className={`aspect-square rounded-sm ${trained ? 'bg-emerald-500' : 'bg-gym-800'}`}
                     title={`${d}${trained ? ' ✓ Entrenó' : ''}`} />
                 )
               })}
@@ -386,7 +389,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Muscle recovery */}
           <div className="bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-3">
               <Shield size={14} className="text-gym-300" />
@@ -395,10 +397,10 @@ export default function Dashboard() {
             {data.workedMuscles && data.workedMuscles.length > 0 ? (
               <div className="space-y-1.5">
                 {data.workedMuscles.map((w, i) => (
-                  <div key={i} className="flex items-center justify-between bg-gym-900/50 rounded-lg px-3 py-2">
+                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center justify-between bg-gym-900/50 rounded-lg px-3 py-2">
                     <span className="text-xs text-white font-medium">{w.day}</span>
                     <span className="text-[10px] bg-gym-700/50 text-gym-300 px-2 py-0.5 rounded-full">{w.muscle}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -406,18 +408,17 @@ export default function Dashboard() {
             )}
             <p className="text-[10px] text-gray-600 mt-2 italic">Grupos trabajados en los últimos 7 días</p>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Recent results */}
         {data.recentResults.length > 0 && (
-          <div>
+          <motion.div variants={fadeUp}>
             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Activity size={16} className="text-gym-400" />
               Últimos registros
             </h2>
             <div className="space-y-2">
               {data.recentResults.map((r, i) => (
-                <div key={i} className="bg-gym-800/50 border border-gym-700/30 rounded-xl px-4 py-3 flex items-center justify-between hover:bg-gym-800/70 transition">
+                <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }} whileHover={{ x: 4 }} className="bg-gym-800/50 border border-gym-700/30 rounded-xl px-4 py-3 flex items-center justify-between hover:bg-gym-800/70 transition-all cursor-default">
                   <div className="flex items-center gap-3">
                     <Dumbbell size={14} className="text-gym-300 shrink-0" />
                     <span className="text-sm text-white font-medium">{r.name}</span>
@@ -427,18 +428,17 @@ export default function Dashboard() {
                     <span className="text-gym-200 font-bold">{r.reps} reps</span>
                     <span className="text-xs text-gray-500">{new Date(r.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* Footer */}
-        <div className="mt-12 pt-6 border-t border-gym-800 text-center">
+        <motion.div variants={fadeUp} className="mt-12 pt-6 border-t border-gym-800 text-center">
           <img src="https://enriquezmania.com/wp-content/uploads/2024/08/logo.png" alt="EnriquezMania" className="h-8 mx-auto mb-2 opacity-50" />
           <p className="text-xs text-gym-400/50 font-medium tracking-wide">Plataforma hecha por Ing. Jose Luis Enriquez</p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

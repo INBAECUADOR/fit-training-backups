@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -7,13 +8,23 @@ import {
 } from 'chart.js'
 import { getMeasurements, saveMeasurement, updateMeasurement, deleteMeasurement, downloadExport } from '../api'
 import Navbar from '../components/Navbar'
+import { SkeletonCard } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
-import { Download, Trash2, Camera, Pencil } from 'lucide-react'
+import { Download, Trash2, Camera, Pencil, X } from 'lucide-react'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
+const stagger = {
+  animate: { transition: { staggerChildren: 0.05 } }
+}
+
+const fadeUp = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } }
+}
+
 export default function Evolution() {
-  const [measurements, setMeasurements] = useState([])
+  const [measurements, setMeasurements] = useState(null)
   const [form, setForm] = useState({ weight: '', height: '', neck: '', shoulders: '', chest: '', waist: '', arms: '', legs: '', back: '', biceps: '', forearms: '', wrist: '', mid_abdomen: '', hips: '', thigh: '', mid_thigh: '', calf: '', notes: '' })
   const [showForm, setShowForm] = useState(false)
   const [photos, setPhotos] = useState({ photo1: null, photo2: null, photo3: null, photo4: null })
@@ -24,7 +35,9 @@ export default function Evolution() {
   const { showToast } = useToast()
 
   useEffect(() => {
-    getMeasurements().then(setMeasurements).catch(() => showToast('Error al cargar mediciones', 'error'))
+    getMeasurements()
+      .then(setMeasurements)
+      .catch(() => { setMeasurements([]); showToast('Error al cargar mediciones', 'error') })
   }, [])
 
   const handleEdit = (m) => {
@@ -58,345 +71,231 @@ export default function Evolution() {
   const handleSubmit = async e => {
     e.preventDefault()
     const fd = new FormData()
-    const fields = ['weight','height','neck','shoulders','chest','waist','arms','legs','back','biceps','forearms','wrist','mid_abdomen','hips','thigh','mid_thigh','calf']
-    fields.forEach(k => fd.append(k, parseFloat(form[k]) || 0))
-    fd.append('notes', form.notes)
-    if (photos.photo1) fd.append('photo1', photos.photo1)
-    if (photos.photo2) fd.append('photo2', photos.photo2)
-    if (photos.photo3) fd.append('photo3', photos.photo3)
-    if (photos.photo4) fd.append('photo4', photos.photo4)
-    fd.append('created_at', measDate)
+    fd.append('date', measDate)
+    Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
+    Object.entries(photos).forEach(([k, v]) => { if (v) fd.append(k, v) })
     try {
       if (editingId) {
         await updateMeasurement(editingId, fd)
+        showToast('Medición actualizada', 'success')
       } else {
         await saveMeasurement(fd)
+        showToast('Medición guardada', 'success')
       }
       const updated = await getMeasurements()
       setMeasurements(updated)
-      const empty = Object.fromEntries(fields.map(k => [k, '']))
-      setForm({ ...empty, notes: '' })
-      setPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
-      setPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
       setShowForm(false)
       setEditingId(null)
-      showToast(editingId ? 'Medición actualizada' : 'Medición guardada', 'success')
+      setForm({ weight: '', height: '', neck: '', shoulders: '', chest: '', waist: '', arms: '', legs: '', back: '', biceps: '', forearms: '', wrist: '', mid_abdomen: '', hips: '', thigh: '', mid_thigh: '', calf: '', notes: '' })
+      setPhotos({ photo1: null, photo2: null, photo3: null, photo4: null })
+      setPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' })
     } catch { showToast('Error al guardar medición', 'error') }
   }
 
-  const handlePhoto = (field, file) => {
-    setPhotos(p => ({ ...p, [field]: file }))
+  const handleDelete = async id => {
+    if (!confirm('¿Eliminar esta medición?')) return
+    try {
+      await deleteMeasurement(id)
+      const updated = await getMeasurements()
+      setMeasurements(updated)
+      showToast('Medición eliminada', 'success')
+    } catch { showToast('Error al eliminar medición', 'error') }
+  }
+
+  const handlePhoto = (key, file) => {
+    setPhotos(p => ({ ...p, [key]: file }))
     if (file) {
       const reader = new FileReader()
-      reader.onload = (e) => setPhotoPreviews(prev => ({ ...prev, [field]: e.target.result }))
+      reader.onload = e => setPhotoPreviews(pp => ({ ...pp, [key]: e.target.result }))
       reader.readAsDataURL(file)
     } else {
-      setPhotoPreviews(prev => ({ ...prev, [field]: '' }))
+      setPhotoPreviews(pp => ({ ...pp, [key]: '' }))
     }
   }
 
-  const handleDeleteMeas = async (id) => {
-    if (!confirm('¿Eliminar esta medición?')) return
-    try { await deleteMeasurement(id); setMeasurements(prev => prev.filter(x => x.id !== id)); showToast('Medición eliminada', 'success') } catch { showToast('Error al eliminar medición', 'error') }
+  if (measurements === null) {
+    return (
+      <div className="min-h-screen bg-gym-900">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
+          {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      </div>
+    )
   }
 
-  const sorted = [...measurements].reverse()
-
-  const chartData = {
+  const sorted = [...measurements].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const chartConfig = (label, key, color) => ({
     labels: sorted.map(m => new Date(m.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })),
-    datasets: [
-      { label: 'Peso (kg)', data: sorted.map(m => m.weight), borderColor: '#e94560', backgroundColor: '#e9456020', fill: true, tension: 0.3 },
-      { label: 'Pecho (cm)', data: sorted.map(m => m.chest), borderColor: '#f5a623', backgroundColor: '#f5a62320', fill: true, tension: 0.3 },
-      { label: 'Cintura (cm)', data: sorted.map(m => m.waist), borderColor: '#4ecca3', backgroundColor: '#4ecca320', fill: true, tension: 0.3 },
-    ],
-  }
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { labels: { color: '#ccc', boxWidth: 12, padding: 12 } },
-      tooltip: { backgroundColor: '#1a1a2e', titleColor: '#fff', bodyColor: '#ccc', borderColor: '#333', borderWidth: 1 },
-    },
-    scales: {
-      x: { ticks: { color: '#666' }, grid: { color: '#ffffff08' } },
-      y: { ticks: { color: '#666' }, grid: { color: '#ffffff08' } },
-    },
-  }
-
-  const lastMeas = measurements[0]
+    datasets: [{
+      label, data: sorted.map(m => m[key] || 0), borderColor: color, backgroundColor: color + '20',
+      fill: true, tension: 0.3, pointRadius: 3, pointHoverRadius: 6,
+    }]
+  })
+  const chartOpts = (unit) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} ${unit}` } } },
+    scales: { x: { ticks: { color: '#666', maxTicksLimit: 10 } }, y: { ticks: { color: '#666' } } }
+  })
 
   return (
     <div className="min-h-screen bg-gym-900">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <motion.div initial="initial" animate="animate" variants={stagger} className="max-w-4xl mx-auto px-4 py-8">
+        <motion.div variants={fadeUp} className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white">Evolución</h1>
-            <p className="text-gray-400 text-sm mt-1">Seguí tu progreso físico</p>
+            <p className="text-gray-400 text-sm mt-1">Mediciones corporales y fotos de progreso</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => downloadExport('measurements')}
-              className="p-2 bg-gym-800 hover:bg-gym-700 border border-gym-700/50 rounded-lg text-gray-400 hover:text-white transition"
-              title="Exportar mediciones a CSV"
-            >
+            <button onClick={() => downloadExport('measurements')} className="p-2 bg-gym-800 hover:bg-gym-700 border border-gym-700/50 rounded-lg text-gray-400 hover:text-white transition-all" title="Exportar a CSV">
               <Download size={16} />
             </button>
-            <button
-              onClick={() => { setShowForm(v => !v); setEditingId(null); }}
-              className={`px-4 py-2 rounded-xl font-bold text-sm transition ${
-                showForm
-                  ? 'bg-gym-700 text-gray-300 hover:bg-gym-600'
-                  : 'bg-gradient-to-r from-gym-400 to-orange-500 text-white shadow-lg shadow-gym-400/30 hover:from-red-500 hover:to-orange-600'
-              }`}
-            >
-              {showForm ? 'Cancelar' : 'Nueva Medición'}
+            <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ weight: '', height: '', neck: '', shoulders: '', chest: '', waist: '', arms: '', legs: '', back: '', biceps: '', forearms: '', wrist: '', mid_abdomen: '', hips: '', thigh: '', mid_thigh: '', calf: '', notes: '' }); setMeasDate(new Date().toISOString().split('T')[0]); setPhotos({ photo1: null, photo2: null, photo3: null, photo4: null }); setPhotoPreviews({ photo1: '', photo2: '', photo3: '', photo4: '' }) }} className="px-4 py-2 bg-gradient-to-r from-gym-400 to-orange-500 text-white font-bold text-sm rounded-xl shadow-lg hover:brightness-110 transition-all">
+              Nueva medición
             </button>
           </div>
-        </div>
+        </motion.div>
 
-        {lastMeas && measurements.length >= 2 && (() => {
-          const prev = measurements[measurements.length - 1]
-          const curr = measurements[0]
-          const compFields = [
-            { key: 'shoulders', label: 'Hombros' }, { key: 'chest', label: 'Pecho' },
-            { key: 'back', label: 'Espalda' }, { key: 'neck', label: 'Cuello' },
-            { key: 'biceps', label: 'Bíceps' }, { key: 'forearms', label: 'Antebrazos' },
-            { key: 'wrist', label: 'Muñeca' }, { key: 'mid_abdomen', label: 'Abdomen' },
-            { key: 'waist', label: 'Cintura' }, { key: 'hips', label: 'Cadera' },
-            { key: 'thigh', label: 'Pierna' }, { key: 'mid_thigh', label: 'Media Pierna' },
-            { key: 'calf', label: 'Pantorrilla' }, { key: 'weight', label: 'Peso' },
-          ]
-          return (
-            <div className="bg-gym-800/30 border border-gym-700/30 rounded-xl p-4 mb-6">
-              <h3 className="text-xs font-bold text-gym-300 uppercase tracking-wider mb-3">Comparación</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                <div className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center">
-                  <p className="text-[10px] text-gray-600">Anterior</p>
-                  <p className="text-xs text-gray-400 font-bold">{prev.date?.slice(0,10)}</p>
-                </div>
-                <div className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center">
-                  <p className="text-[10px] text-gray-600">Actual</p>
-                  <p className="text-xs text-gym-300 font-bold">{curr.date?.slice(0,10)}</p>
-                </div>
-                <div className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center">
-                  <p className="text-[10px] text-gray-600">Días</p>
-                  <p className="text-xs text-white font-bold">{Math.round(Math.abs(new Date(curr.date) - new Date(prev.date)) / (1000*60*60*24))}</p>
-                </div>
-                {compFields.map(f => {
-                  const pv = parseFloat(prev[f.key]) || 0; const cv = parseFloat(curr[f.key]) || 0; const diff = (cv - pv).toFixed(1)
-                  return (
-                    <div key={f.key} className="bg-gym-800/50 rounded-lg px-2 py-1.5 text-center border border-gym-700/20">
-                      <p className="text-[10px] text-gray-500">{f.label}</p>
-                      <div className="flex items-center justify-center gap-1 text-xs">
-                        <span className="text-gray-500">{pv.toFixed(1)}</span>
-                        <span className="text-gym-300 font-bold">→ {cv.toFixed(1)}</span>
-                        <span className={`font-bold ${diff > 0 ? 'text-emerald-400' : diff < 0 ? 'text-red-400' : 'text-gray-500'}`}>{diff > 0 ? '+' : ''}{diff}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })()}
-
-        {lastMeas && (
-          <div className="grid grid-cols-5 gap-3 mb-6">
-            {[
-              { label: 'Peso', value: lastMeas.weight, unit: 'kg', color: 'from-gym-400 to-red-500' },
-              { label: 'Hombros', value: lastMeas.shoulders, unit: 'cm', color: 'from-gym-300 to-amber-500' },
-              { label: 'Pecho', value: lastMeas.chest, unit: 'cm', color: 'from-gym-200 to-emerald-400' },
-              { label: 'Bíceps', value: lastMeas.biceps, unit: 'cm', color: 'from-blue-500 to-cyan-400' },
-              { label: 'Pierna', value: lastMeas.thigh, unit: 'cm', color: 'from-purple-500 to-pink-400' },
-            ].map(stat => (
-              <div key={stat.label} className={`bg-gradient-to-br ${stat.color} rounded-xl p-3 text-center shadow-lg`}>
-                <p className="text-xs text-white/80 font-medium">{stat.label}</p>
-                <p className="text-xl font-extrabold text-white">{stat.value}</p>
-                <p className="text-[10px] text-white/60">{stat.unit}</p>
-              </div>
-            ))}
-          </div>
+        {measurements.length === 0 && !showForm && (
+          <motion.div variants={fadeUp} className="text-center py-20 bg-gym-800/30 border border-gym-700/30 rounded-2xl">
+            <Camera size={40} className="text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400 font-semibold mb-1">Aún no tenés mediciones</p>
+            <p className="text-gray-600 text-sm mb-4">Registrá tu peso, medidas y fotos para ver tu evolución</p>
+            <button onClick={() => setShowForm(true)} className="btn-primary text-sm">
+              Registrar primera medición
+            </button>
+          </motion.div>
         )}
 
         {showForm && (
-            <form onSubmit={handleSubmit} className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-6 mb-8">
-              <h3 className="text-sm font-bold text-white mb-4">{editingId ? 'Editar Medición' : 'Nueva Medición'}</h3>
-
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Generales</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[{ key: 'weight', label: 'Peso (kg)', step: '0.1' }, { key: 'height', label: 'Altura (cm)', step: '1' }].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
-                      <input type="number" step={f.step} value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
-                    </div>
-                  ))}
-                </div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 bg-gradient-to-r from-gym-800/80 to-gym-900/80 border border-gym-700/30 rounded-2xl p-5 shadow-xl">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
+              {editingId ? 'Editar medición' : 'Nueva medición'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 font-semibold mb-1">Fecha</label>
+                <input type="date" value={measDate} onChange={e => setMeasDate(e.target.value)} required className="w-full sm:w-56 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all" />
               </div>
 
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Torso Superior</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[{ key: 'shoulders', label: 'Hombros (cm)' }, { key: 'chest', label: 'Pecho (cm)' }, { key: 'back', label: 'Espalda (cm)' }, { key: 'neck', label: 'Cuello (cm)' }].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
-                      <input type="number" step="0.1" value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {[
+                  { key: 'weight', label: 'Peso (kg)', type: 'number' },
+                  { key: 'height', label: 'Altura (cm)', type: 'number' },
+                  { key: 'neck', label: 'Cuello (cm)', type: 'number' },
+                  { key: 'shoulders', label: 'Hombros (cm)', type: 'number' },
+                  { key: 'chest', label: 'Pecho (cm)', type: 'number' },
+                  { key: 'waist', label: 'Cintura (cm)', type: 'number' },
+                  { key: 'arms', label: 'Brazos (cm)', type: 'number' },
+                  { key: 'legs', label: 'Piernas (cm)', type: 'number' },
+                  { key: 'back', label: 'Espalda (cm)', type: 'number' },
+                  { key: 'biceps', label: 'Bíceps (cm)', type: 'number' },
+                  { key: 'forearms', label: 'Antebrazos (cm)', type: 'number' },
+                  { key: 'wrist', label: 'Muñeca (cm)', type: 'number' },
+                  { key: 'mid_abdomen', label: 'Abdomen (cm)', type: 'number' },
+                  { key: 'hips', label: 'Cadera (cm)', type: 'number' },
+                  { key: 'thigh', label: 'Muslo (cm)', type: 'number' },
+                  { key: 'mid_thigh', label: 'Muslo medio (cm)', type: 'number' },
+                  { key: 'calf', label: 'Pantorrilla (cm)', type: 'number' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-[10px] text-gray-500 font-medium mb-0.5">{f.label}</label>
+                    <input type={f.type} step="0.1" value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} className="w-full px-2.5 py-1.5 bg-gym-900 border border-gym-700 rounded-lg text-white text-xs focus:outline-none focus:border-gym-400 transition-all" />
+                  </div>
+                ))}
               </div>
 
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Brazos</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {[{ key: 'biceps', label: 'Bíceps (cm)' }, { key: 'forearms', label: 'Antebrazos (cm)' }, { key: 'wrist', label: 'Muñeca (cm)' }].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
-                      <input type="number" step="0.1" value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Torso Inferior</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {[{ key: 'mid_abdomen', label: 'Abdomen Medio (cm)' }, { key: 'waist', label: 'Cintura (cm)' }, { key: 'hips', label: 'Cadera (cm)' }].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
-                      <input type="number" step="0.1" value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Piernas</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {[{ key: 'thigh', label: 'Pierna (cm)' }, { key: 'mid_thigh', label: 'Media Pierna (cm)' }, { key: 'calf', label: 'Pantorrilla (cm)' }].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
-                      <input type="number" step="0.1" value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                        className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gym-300 uppercase tracking-wider mb-2">Fotos de Progreso</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[{ key: 'photo1', label: 'Foto Frontal' }, { key: 'photo2', label: 'Foto Espalda' }, { key: 'photo3', label: 'Foto Lateral' }, { key: 'photo4', label: 'Foto Pose' }].map(p => (
-                    <div key={p.key}>
-                      <label className="block text-xs text-gray-400 mb-1">{p.label}</label>
-                      <label className="flex items-center gap-1.5 px-3 py-2 bg-gym-700 hover:bg-gym-600 text-gym-300 rounded-lg text-xs font-bold cursor-pointer transition w-full justify-center">
-                        <Camera size={14} />
-                        <input type="file" accept="image/*" className="hidden" onChange={e => handlePhoto(p.key, e.target.files[0])} />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {['photo1','photo2','photo3','photo4'].map((key, i) => (
+                  <div key={key}>
+                    <label className="block text-[10px] text-gray-500 font-medium mb-1">Foto {i + 1}</label>
+                    {photoPreviews[key] ? (
+                      <div className="relative">
+                        <img src={photoPreviews[key]} alt={`Foto ${i + 1}`} className="w-full aspect-[3/4] object-cover rounded-lg border border-gym-700" />
+                        <button type="button" onClick={() => handlePhoto(key, null)} className="absolute top-1 right-1 p-1 bg-gym-900/80 rounded-full text-gray-400 hover:text-white transition">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center aspect-[3/4] bg-gym-900 border border-dashed border-gym-700 rounded-lg cursor-pointer hover:border-gym-500 transition-all">
+                        <Camera size={20} className="text-gray-500 mb-1" />
+                        <span className="text-[10px] text-gray-600">Agregar foto</span>
+                        <input type="file" accept="image/*" onChange={e => handlePhoto(key, e.target.files?.[0])} className="hidden" />
                       </label>
-                      {photoPreviews[p.key] && <img src={photoPreviews[p.key]} alt={p.label} className="w-full aspect-[3/4] rounded-lg object-cover bg-gym-900 mt-2" />}
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-400 mb-1">Fecha de la medición</label>
-                <input type="date" value={measDate} onChange={e => setMeasDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 mb-2" />
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: 'Hoy', days: 0 },
-                    { label: 'Ayer', days: 1 },
-                    { label: '7 días', days: 7 },
-                    { label: '15 días', days: 15 },
-                    { label: '30 días', days: 30 },
-                  ].map(opt => {
-                    const d = new Date(Date.now() - opt.days * 86400000).toISOString().split('T')[0]
-                    return (
-                      <button key={opt.label} type="button" onClick={() => setMeasDate(d)}
-                        className={`px-2 py-1 text-[10px] font-bold rounded-lg transition ${measDate === d ? 'bg-gym-400 text-white' : 'bg-gym-700/50 text-gray-400 hover:bg-gym-700 hover:text-white'}`}>
-                        {opt.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-400 mb-1">Notas</label>
-                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                  className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm focus:outline-none focus:border-gym-400 resize-none" rows={2} />
+              <div>
+                <label className="block text-xs text-gray-400 font-semibold mb-1">Notas</label>
+                <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 transition-all resize-none" placeholder="Observaciones..." />
               </div>
 
-              <button type="submit" className="bg-gradient-to-r from-gym-200 to-emerald-400 hover:from-emerald-400 hover:to-green-500 text-gym-900 px-6 py-2.5 rounded-lg font-bold transition shadow-lg">
-                Guardar Medición
-              </button>
+              <div className="flex gap-2">
+                <button type="submit" className="btn-primary text-sm">
+                  {editingId ? 'Actualizar' : 'Guardar medición'}
+                </button>
+                <button type="button" onClick={() => { setShowForm(false); setEditingId(null) }} className="btn-ghost text-sm">
+                  Cancelar
+                </button>
+              </div>
             </form>
+          </motion.div>
         )}
 
-        {measurements.length > 0 && (
-          <div className="bg-gym-800/50 border border-gym-700/50 rounded-xl p-6 mb-8">
-            <Line data={chartData} options={chartOptions} />
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {measurements.map(m => (
-            <div key={m.id} className="bg-gym-800/30 border border-gym-700/30 rounded-lg px-4 py-3 hover:bg-gym-800/50 transition">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-gray-400 text-sm">
-                  {new Date(m.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit(m)} className="p-1.5 text-gray-400 hover:text-gym-300 transition" title="Editar">
-                    <Pencil size={14} />
-                  </button>
-                  <button onClick={() => handleDeleteMeas(m.id)} className="p-1.5 text-gray-400 hover:text-gym-400 transition" title="Eliminar">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {sorted.length > 1 && ['weight','chest','waist','arms'].filter(k => sorted.some(m => m[k] > 0)).map(k => (
+            <motion.div key={k} variants={fadeUp} className="bg-gym-800/50 border border-gym-700/30 rounded-2xl p-4">
+              <div className="h-48">
+                <Line data={chartConfig({ weight: 'Peso', chest: 'Pecho', waist: 'Cintura', arms: 'Brazos' }[k], k, { weight: '#f59e0b', chest: '#ef4444', waist: '#3b82f6', arms: '#22c55e' }[k])} options={chartOpts({ weight: 'kg', chest: 'cm', waist: 'cm', arms: 'cm' }[k])} />
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300">
-                <span className="text-gym-400 font-bold">{m.weight} kg</span>
-                <span>Hombros: {m.shoulders}</span>
-                <span>Pecho: {m.chest}</span>
-                <span>Espalda: {m.back}</span>
-                <span>Bíceps: {m.biceps}</span>
-                <span>Abdomen: {m.mid_abdomen}</span>
-                <span>Cintura: {m.waist}</span>
-                <span>Cadera: {m.hips}</span>
-                <span>Pierna: {m.thigh}</span>
-                <span>Pantorrilla: {m.calf}</span>
-              </div>
-              {m.notes && <p className="text-xs text-gray-500 mt-1">{m.notes}</p>}
-              {[m.photo1, m.photo2, m.photo3, m.photo4].filter(Boolean).length > 0 && (
-                <div className="flex gap-2 mt-2">
-                  {[m.photo1, m.photo2, m.photo3, m.photo4].map((p, i) => p && (
-                    <img key={i} src={p} alt={`Foto ${i+1}`} className="w-16 h-20 rounded-lg object-cover bg-gym-900 cursor-pointer hover:opacity-80 transition" onClick={() => setExpandedPhoto(p)} />
-                  ))}
-                </div>
-              )}
-            </div>
+            </motion.div>
           ))}
-          {measurements.length === 0 && (
-            <p className="text-center text-gray-500 py-10">Aún no tenés mediciones registradas</p>
-          )}
         </div>
 
+        {measurements.length > 0 && (
+          <motion.div variants={fadeUp} className="space-y-3">
+            <h2 className="text-lg font-bold text-white mb-4">Historial de mediciones</h2>
+            {[...measurements].sort((a, b) => new Date(b.date) - new Date(a.date)).map((m, i) => (
+              <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="bg-gym-800/50 border border-gym-700/30 rounded-xl p-4 hover:bg-gym-800/70 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-white">
+                    {new Date(m.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>
+                  <div className="flex gap-1">
+                    <button onClick={() => handleEdit(m)} className="p-1.5 text-gray-500 hover:text-gym-300 transition" title="Editar"><Pencil size={14} /></button>
+                    <button onClick={() => handleDelete(m.id)} className="p-1.5 text-gray-500 hover:text-red-400 transition" title="Eliminar"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
+                  {m.weight > 0 && <span className="font-bold text-gym-300">{m.weight} kg <span className="font-normal text-gray-500">peso</span></span>}
+                  {m.chest > 0 && <span className="font-bold text-white">{m.chest} cm <span className="font-normal text-gray-500">pecho</span></span>}
+                  {m.waist > 0 && <span className="font-bold text-white">{m.waist} cm <span className="font-normal text-gray-500">cintura</span></span>}
+                  {m.arms > 0 && <span className="font-bold text-white">{m.arms} cm <span className="font-normal text-gray-500">brazos</span></span>}
+                  {m.legs > 0 && <span className="font-bold text-white">{m.legs} cm <span className="font-normal text-gray-500">piernas</span></span>}
+                </div>
+                {m.photo1 && (
+                  <div className="flex gap-2 mt-2">
+                    {[m.photo1, m.photo2, m.photo3, m.photo4].filter(Boolean).map((p, pi) => (
+                      <button key={pi} onClick={() => setExpandedPhoto(p)} className="shrink-0">
+                        <img src={p} alt={`Foto ${pi + 1}`} className="w-16 h-20 object-cover rounded-lg border border-gym-700 hover:border-gym-400 transition-all" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
         {expandedPhoto && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setExpandedPhoto(null)}>
-            <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setExpandedPhoto(null)}
-                className="absolute -top-10 right-0 text-white hover:text-gray-300 transition text-lg font-bold">Cerrar ✕</button>
-              <img src={expandedPhoto} alt="Progreso" className="w-full rounded-xl shadow-2xl" />
-            </div>
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 fade-in-up" onClick={() => setExpandedPhoto(null)}>
+            <img src={expandedPhoto} alt="Foto expandida" className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }

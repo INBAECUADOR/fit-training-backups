@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { getExercises, getRoutines, getAlternatives } from '../api'
 import ExerciseCard from '../components/ExerciseCard'
 import ResultModal from '../components/ResultModal'
@@ -9,6 +10,15 @@ import { useToast } from '../components/Toast'
 import { Dumbbell, RefreshCw } from 'lucide-react'
 
 const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+
+const stagger = {
+  animate: { transition: { staggerChildren: 0.05 } }
+}
+
+const fadeUp = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } }
+}
 
 export default function Routine() {
   const [routines, setRoutines] = useState([])
@@ -57,8 +67,8 @@ export default function Routine() {
   return (
     <div className="min-h-screen bg-gym-900">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <motion.div initial="initial" animate="animate" variants={stagger} className="max-w-4xl mx-auto px-4 py-8">
+        <motion.div variants={fadeUp} className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white">Rutina</h1>
             {currentRoutine && (
@@ -70,14 +80,14 @@ export default function Routine() {
               {currentRoutine.day_label}
             </span>
           )}
-        </div>
+        </motion.div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <motion.div variants={fadeUp} className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {days.map(day => (
             <button
               key={day}
               onClick={() => setSelectedDay(day)}
-              className={`px-5 py-2 rounded-xl font-bold text-sm transition whitespace-nowrap ${
+              className={`px-5 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${
                 selectedDay === day
                   ? 'bg-gradient-to-r from-gym-400 to-orange-500 text-white shadow-lg shadow-gym-400/30'
                   : 'bg-gym-800 text-gray-400 hover:bg-gym-700'
@@ -86,32 +96,40 @@ export default function Routine() {
               {day}
             </button>
           ))}
-        </div>
+        </motion.div>
 
         {showTimer && (
-          <div className="mb-6 max-w-xs">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 max-w-xs overflow-hidden">
             <RestTimer key={restTimerKey} autoStart={autoRestTime} onFinish={() => setShowTimer(false)} />
-          </div>
+          </motion.div>
         )}
 
         {loading ? (
-          <div className="text-center text-gray-400 py-20">Cargando ejercicios...</div>
-        ) : exercises.length === 0 ? (
-          <div className="text-center text-gray-500 py-20">No hay ejercicios para este día</div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {exercises.map(ex => (
-              <ExerciseCard
-                key={ex.id}
-                exercise={ex}
-                onRegister={() => setSelectedExercise(ex)}
-                onProgress={() => setProgressExercise(ex)}
-                alternatives={alternatives[ex.id]}
-                altLoading={altLoading[ex.id]}
-                onLoadAlternatives={() => loadAlternatives(ex.id)}
-              />
+          <div className="space-y-4">
+            {[1,2,3].map(i => (
+              <div key={i} className="shimmer bg-gym-800/30 rounded-2xl p-5 h-32" />
             ))}
           </div>
+        ) : exercises.length === 0 ? (
+          <motion.div variants={fadeUp} className="text-center py-20">
+            <Dumbbell size={40} className="text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-500">No hay ejercicios para este día</p>
+          </motion.div>
+        ) : (
+          <motion.div variants={stagger} className="grid grid-cols-1 gap-6">
+            {exercises.map((ex, i) => (
+              <motion.div key={ex.id} variants={fadeUp}>
+                <ExerciseCard
+                  exercise={ex}
+                  onRegister={() => setSelectedExercise(ex)}
+                  onProgress={() => setProgressExercise(ex)}
+                  alternatives={alternatives[ex.id]}
+                  altLoading={altLoading[ex.id]}
+                  onLoadAlternatives={() => loadAlternatives(ex.id)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
         )}
 
         {selectedExercise && (
@@ -128,7 +146,7 @@ export default function Routine() {
             onClose={() => setProgressExercise(null)}
           />
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }

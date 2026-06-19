@@ -6,6 +6,7 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {
@@ -26,14 +27,48 @@ body {
     @apply card hover:shadow-card-hover hover:border-gym-500/40 transition duration-300;
   }
   .btn-primary {
-    @apply bg-gradient-to-r from-gym-400 to-gym-300 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg hover:shadow-glow transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gradient-to-r from-gym-400 to-gym-300 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg hover:shadow-glow hover:brightness-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-ghost {
-    @apply bg-gym-700 hover:bg-gym-600 text-gray-300 hover:text-white font-semibold py-2 px-4 rounded-xl transition duration-200;
+    @apply bg-gym-700 hover:bg-gym-600 text-gray-300 hover:text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200;
   }
   .input {
-    @apply bg-gym-800 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition duration-200;
+    @apply bg-gym-800 border border-gym-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all duration-200;
   }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.02) 25%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.02) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.scale-in {
+  animation: scale-in 0.3s ease-out both;
 }
 
 @keyframes toast-slide-in {
@@ -43,4 +78,13 @@ body {
 
 .toast-slide-in {
   animation: toast-slide-in 0.3s ease-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
 }
