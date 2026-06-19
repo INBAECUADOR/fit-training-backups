@@ -201,11 +201,16 @@ export default function Landing() {
                 Popular
               </span>
               <h3 className="text-xl font-bold text-white mb-2">Premium</h3>
-              <p className="text-3xl font-extrabold text-white mb-6">
-                Consultar<span className="text-sm font-normal text-gray-500"></span>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-3xl font-extrabold text-white">$30</span>
+                <span className="text-sm text-gray-500">/mes</span>
+              </div>
+              <p className="text-sm text-gray-400 mb-6">
+                o <span className="text-gym-300 font-bold">$19/mes</span> facturado anualmente
+                <span className="ml-2 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">Ahorra 37%</span>
               </p>
               <ul className="space-y-3 mb-8">
-                {['Todo lo de Free', 'Rutina + Dieta personalizada', 'Fotos de progreso', 'Dashboard admin multi-usuario', 'Soporte prioritario'].map((item, i) => (
+                {['Todo lo de Free', 'Rutina + Dieta personalizada', 'Fotos de progreso', 'Dashboard multi-usuario', 'Soporte prioritario'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                     <Check size={16} className="text-emerald-400 shrink-0" /> {item}
                   </li>
@@ -213,7 +218,7 @@ export default function Landing() {
               </ul>
               <button onClick={handleCta}
                 className="w-full py-3 bg-gradient-to-r from-gym-400 to-orange-500 text-white font-bold rounded-xl text-sm transition hover:opacity-90 shadow-lg shadow-gym-400/30">
-                Contactar
+                Elegir Plan
               </button>
             </div>
           </div>
