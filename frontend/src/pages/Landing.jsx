@@ -7,15 +7,15 @@ const FEATURES = [
   { icon: Dumbbell, title: 'Rutinas Personalizadas', desc: 'Planes de entrenamiento adaptados a tu objetivo, nivel y días disponibles.' },
   { icon: ClipboardList, title: 'Plan Completo', desc: 'Rutinas y dietas generadas automáticamente según tu objetivo y nivel.' },
   { icon: UtensilsCrossed, title: 'Dieta Inteligente', desc: 'Plan alimenticio con macronutrientes calculados según tu meta.' },
-  { icon: Camera, title: 'Fotos de Progreso', desc: 'Registrá tu evolución visual con fotos frontal, espalda y lateral.' },
+  { icon: Camera, title: 'Fotos de Progreso', desc: 'Registra tu evolución visual con fotos frontal, espalda y lateral.' },
   { icon: TrendingUp, title: 'Métricas Detalladas', desc: 'Seguimiento de peso, medidas corporales y composición. +15 medidas.' },
   { icon: Trophy, title: 'Records Personales', desc: 'Tracking de tus marcas en cada ejercicio con progresión.' },
 ]
 
 const STEPS = [
   { num: '01', title: 'Configuración Inicial', desc: 'El entrenador configura tu perfil con tu objetivo, experiencia y equipo disponible.' },
-  { num: '02', title: 'Plan Personalizado', desc: 'Se genera tu rutina y dieta exacta para vos. Revisá y ajustá según prefieras.' },
-  { num: '03', title: 'Seguimiento Semanal', desc: 'Registrá tus pesos, medidas y fotos. La app muestra tu evolución en gráficos.' },
+  { num: '02', title: 'Plan Personalizado', desc: 'Se genera tu rutina y dieta exacta para ti. Revisa y ajusta según prefieras.' },
+  { num: '03', title: 'Seguimiento Semanal', desc: 'Registra tus pesos, medidas y fotos. La app muestra tu evolución en gráficos.' },
 ]
 
 export default function Landing() {
@@ -66,7 +66,7 @@ export default function Landing() {
             </span>
           </h1>
           <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Generá rutinas, planes de alimentación y hacé seguimiento de tu evolución con fotos y métricas.
+            Genera rutinas, planes de alimentación y haz seguimiento de tu evolución con fotos y métricas.
             Todo en una sola plataforma.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -231,7 +231,7 @@ export default function Landing() {
             <div className="bg-gym-800/50 border border-gym-700/30 rounded-2xl p-8 order-2 lg:order-1">
               <div className="flex items-center gap-3 mb-6">
                 <Smartphone size={24} className="text-gym-300" />
-                <h3 className="text-lg font-bold text-white">Accedé desde cualquier lado</h3>
+                <h3 className="text-lg font-bold text-white">Accede desde cualquier lugar</h3>
               </div>
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex -space-x-2">
@@ -279,7 +279,7 @@ export default function Landing() {
               ¿Sos entrenador personal?
             </h2>
             <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
-              Tené tu propia plataforma para gestionar todos tus clientes. Rutinas, dietas, evolución con fotos y más.
+              Ten tu propia plataforma para gestionar todos tus clientes. Rutinas, dietas, evolución con fotos y más.
             </p>
             <button onClick={handleCta}
               className="px-8 py-3.5 bg-gradient-to-r from-gym-400 to-orange-500 text-white font-bold rounded-xl text-lg transition hover:opacity-90 shadow-lg shadow-gym-400/30 inline-flex items-center gap-2">

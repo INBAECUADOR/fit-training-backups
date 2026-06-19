@@ -94,7 +94,7 @@ export default function AgentIA() {
           <Bot size={28} className="text-gym-300" />
           <div>
             <h1 className="text-3xl font-extrabold text-white">Agente IA</h1>
-            <p className="text-gray-400 text-sm">Generá rutinas y dietas personalizadas con IA</p>
+            <p className="text-gray-400 text-sm">Genera rutinas y dietas personalizadas con IA</p>
           </div>
         </div>
 
