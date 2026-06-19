@@ -178,39 +178,38 @@ export default function Landing() {
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">Planes</h2>
             <p className="text-gray-400 max-w-xl mx-auto">Elegí el plan que mejor se adapte a tus necesidades.</p>
           </div>
-          <div className="grid sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            <div className="bg-gym-800 border border-gym-700/50 rounded-2xl p-8">
-              <h3 className="text-xl font-bold text-white mb-2">Free</h3>
-              <p className="text-3xl font-extrabold text-white mb-6">
-                $0<span className="text-sm font-normal text-gray-500">/mes</span>
-              </p>
-              <ul className="space-y-3 mb-8">
-                {['Rutina personalizada', 'Seguimiento de medidas', 'Gráficos de evolución', 'Registro de pesos'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
-                    <Check size={16} className="text-emerald-400 shrink-0" /> {item}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={handleCta}
-                className="w-full py-3 border border-gym-600 text-white font-bold rounded-xl text-sm transition hover:bg-gym-700">
-                {token ? 'Ir al Dashboard' : 'Comenzar'}
-              </button>
-            </div>
+          <div className="max-w-md mx-auto">
             <div className="bg-gradient-to-br from-gym-400/10 to-orange-500/10 border border-gym-400/30 rounded-2xl p-8 relative">
               <span className="absolute -top-3 right-6 px-3 py-1 bg-gradient-to-r from-gym-400 to-orange-500 text-white text-xs font-bold rounded-full">
-                Popular
+                Recomendado
               </span>
-              <h3 className="text-xl font-bold text-white mb-2">Premium</h3>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-3xl font-extrabold text-white">$30</span>
-                <span className="text-sm text-gray-500">/mes</span>
+              <h3 className="text-xl font-bold text-white mb-4">Premium</h3>
+              <div className="space-y-4 mb-8">
+                <div className="bg-gym-800/50 rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-bold text-white">Mensual</p>
+                    <p className="text-sm text-gray-400">Facturado cada mes</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-extrabold text-white">$30</span>
+                    <span className="text-sm text-gray-500">/mes</span>
+                  </div>
+                </div>
+                <div className="bg-gym-800/50 rounded-xl p-4 flex items-center justify-between border border-gym-400/20">
+                  <div>
+                    <p className="text-lg font-bold text-white">Anual</p>
+                    <p className="text-sm text-gray-400">Facturado una vez al año</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-extrabold text-white">$19.99</span>
+                    <span className="text-sm text-gray-500">/mes</span>
+                    <br />
+                    <span className="text-xs text-emerald-400 font-bold">$239.88 al año</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-gray-400 mb-6">
-                o <span className="text-gym-300 font-bold">$19/mes</span> facturado anualmente
-                <span className="ml-2 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">Ahorra 37%</span>
-              </p>
               <ul className="space-y-3 mb-8">
-                {['Todo lo de Free', 'Rutina + Dieta personalizada', 'Fotos de progreso', 'Dashboard multi-usuario', 'Soporte prioritario'].map((item, i) => (
+                {['Rutina personalizada', 'Dieta personalizada', 'Fotos de progreso', 'Dashboard multi-usuario', 'Soporte prioritario'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                     <Check size={16} className="text-emerald-400 shrink-0" /> {item}
                   </li>
