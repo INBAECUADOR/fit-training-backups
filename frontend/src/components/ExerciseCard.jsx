@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Clipboard, TrendingUp, Maximize2, RefreshCw, Search } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Clipboard, TrendingUp, Maximize2, RefreshCw, Search, X } from 'lucide-react'
 
 export default function ExerciseCard({ exercise, onRegister, onProgress, alternatives, altLoading, onLoadAlternatives }) {
   const [expandedGif, setExpandedGif] = useState(null)
@@ -87,13 +88,15 @@ export default function ExerciseCard({ exercise, onRegister, onProgress, alterna
     </div>
 
     {expandedGif && (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setExpandedGif(null)}>
-        <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setExpandedGif(null)}>
+        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
           <button onClick={() => setExpandedGif(null)}
-            className="absolute -top-10 right-0 text-white hover:text-gray-300 transition text-lg font-bold">Cerrar ✕</button>
+            className="absolute -top-10 right-0 flex items-center gap-1.5 text-white hover:text-gray-300 transition text-sm font-bold">
+            Cerrar <X size={16} />
+          </button>
           <img src={expandedGif} alt="Ejercicio" className="w-full rounded-xl shadow-2xl" />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     )}
     </>
   )

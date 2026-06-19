@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import Navbar from '../components/Navbar'
 import {
   BookOpen, LayoutDashboard, Dumbbell, UtensilsCrossed, TrendingUp, Trophy,
   Calculator, Clock, Image, RefreshCw, Target, User, Calendar, Activity,
@@ -136,6 +137,7 @@ export default function Manual() {
   const [allOpen, setAllOpen] = useState(false)
   return (
     <div className="min-h-screen bg-gym-900">
+      <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">

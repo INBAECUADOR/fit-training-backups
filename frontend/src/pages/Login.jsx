@@ -53,7 +53,7 @@ export default function Login() {
               type="text"
               value={credential}
               onChange={e => setCredential(e.target.value)}
-              className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 transition"
+              className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
               placeholder="Ingresá tu email o documento"
               required
             />
@@ -64,7 +64,7 @@ export default function Login() {
               type="password"
               value={pass}
               onChange={e => setPass(e.target.value)}
-              className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 transition"
+              className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
               placeholder="Ingresá tu contraseña"
               required
             />
@@ -73,7 +73,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-gym-400 to-orange-500 hover:from-red-500 hover:to-orange-600 text-white font-bold rounded-xl transition disabled:opacity-50 shadow-lg shadow-gym-400/30"
+            className="w-full py-3 bg-gradient-to-r from-gym-400 to-orange-500 hover:brightness-110 text-white font-bold rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-gym-400/30"
           >
             {loading ? 'Ingresando...' : 'Ingresar'}
           </button>

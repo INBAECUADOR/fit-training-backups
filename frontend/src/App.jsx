@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -33,6 +33,9 @@ function PublicHome() {
 }
 
 export default function App() {
+  const location = useLocation()
+  const hideFooter = location.pathname === '/login' || location.pathname === '/landing'
+
   return (
     <ToastProvider>
     <div className="min-h-screen bg-gym-900 flex flex-col">
@@ -52,7 +55,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
     </ToastProvider>
   )

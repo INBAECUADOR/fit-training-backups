@@ -94,7 +94,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
               <input
                 type="number" step="0.5" value={weight}
                 onChange={e => setWeight(e.target.value)}
-                className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 transition"
+                className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
                 placeholder="Ej: 45"
                 autoFocus
               />
@@ -104,7 +104,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
               <input
                 type="number" value={reps}
                 onChange={e => setReps(e.target.value)}
-                className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 transition"
+                className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
                 placeholder="Ej: 10"
               />
             </div>
@@ -114,7 +114,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
             <input
               type="text" value={time}
               onChange={e => setTime(e.target.value)}
-              className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 transition"
+              className="w-full px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
               placeholder="Ej: 45 min"
             />
           </div>
@@ -131,7 +131,7 @@ export default function ResultModal({ exercise, onClose, onSaved }) {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-2.5 bg-gradient-to-r from-gym-400 to-orange-500 hover:from-red-500 hover:to-orange-600 text-white font-bold rounded-lg transition disabled:opacity-50 shadow-lg"
+            className="w-full py-2.5 bg-gradient-to-r from-gym-400 to-orange-500 hover:brightness-110 text-white font-bold rounded-lg transition-all disabled:opacity-50 shadow-lg"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
