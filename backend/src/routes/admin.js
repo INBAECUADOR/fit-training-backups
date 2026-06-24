@@ -61,16 +61,27 @@ router.put('/users/:id', async (req, res) => {
   try {
     const { document_id, email, name, password, membership_start_date, membership_end_date } = req.body;
     const db = await getDb();
-    let sql = 'UPDATE users SET document_id = ?, email = ?, name = ?, membership_start_date = ?, membership_end_date = ?';
-    const params = [document_id || '', email || '', name || '', membership_start_date || '', membership_end_date || ''];
+
+    // Build dynamic SET
+    const sets = [];
+    const params = [];
+
+    if (document_id !== undefined) { sets.push('document_id = ?'); params.push(document_id); }
+    if (email !== undefined) { sets.push('email = ?'); params.push(email); }
+    if (name !== undefined) { sets.push('name = ?'); params.push(name); }
+    if (membership_start_date !== undefined) { sets.push('membership_start_date = ?'); params.push(membership_start_date); }
+    if (membership_end_date !== undefined) { sets.push('membership_end_date = ?'); params.push(membership_end_date); }
     if (password) {
+      if (password.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
       const hashed = bcrypt.hashSync(password, 10);
-      sql += ', password = ?';
+      sets.push('password = ?');
       params.push(hashed);
     }
-    sql += ' WHERE id = ?';
+
+    if (sets.length === 0) return res.status(400).json({ error: 'No hay campos para actualizar' });
+
     params.push(req.params.id);
-    db.run(sql, params);
+    db.run(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, params);
     saveDb();
     res.json({ message: 'Usuario actualizado' });
   } catch (err) {
