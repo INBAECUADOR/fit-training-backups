@@ -432,7 +432,7 @@ export default function Admin() {
             { key: 'measurements', label: 'Medidas', icon: TrendingUp, hideForAdmin: true },
             { key: 'users', label: 'Usuarios', icon: UsersIcon },
             { key: 'catalog', label: 'Catálogo', icon: BookOpen },
-            { key: 'templates', label: 'Plantillas', icon: Layers },
+            { key: 'templates', label: 'Rutinas', icon: Layers },
             { key: 'ai', label: 'Agente IA', icon: Bot },
             { key: 'motivation', label: 'Motivación', icon: MessageCircle },
           ].filter(t => !(isRootAdmin && t.hideForAdmin)).map(t => (
