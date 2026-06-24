@@ -46,6 +46,7 @@ router.post('/users', async (req, res) => {
     const routines = [
       { day: 'Lunes', label: 'Día 1' }, { day: 'Martes', label: 'Día 2' },
       { day: 'Miércoles', label: 'Día 3' }, { day: 'Jueves', label: 'Día 4' }, { day: 'Viernes', label: 'Día 5' },
+      { day: 'Sábado', label: 'Día 6' }, { day: 'Domingo', label: 'Día 7' },
     ];
     for (const r of routines) {
       db.run(`INSERT INTO routines (user_id, day_name, day_label) VALUES (?, ?, ?)`, [newId, r.day, r.label]);

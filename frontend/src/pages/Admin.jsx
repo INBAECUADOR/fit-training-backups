@@ -16,7 +16,7 @@ import { useToast } from '../components/Toast'
 import { useNavigate } from 'react-router-dom'
 import AdminRoutineTemplates from './AdminRoutineTemplates'
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const MEAL_TIMES = [
   { key: 'breakfast', label: 'Desayuno' },
   { key: 'morning_snack', label: 'Snack Mañana' },
