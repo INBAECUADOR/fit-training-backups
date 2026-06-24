@@ -219,6 +219,24 @@ export const adminCreateMotivation = (data) =>
 export const adminDeleteMotivation = (id) =>
   api.delete(`/admin/motivation/${id}`).then(r => r.data)
 
+export const adminGetRoutineTemplates = () =>
+  api.get('/admin/routine-templates').then(r => r.data)
+
+export const adminGetRoutineTemplate = (id) =>
+  api.get(`/admin/routine-templates/${id}`).then(r => r.data)
+
+export const adminCreateRoutineTemplate = (data) =>
+  api.post('/admin/routine-templates', data).then(r => r.data)
+
+export const adminUpdateRoutineTemplate = (id, data) =>
+  api.put(`/admin/routine-templates/${id}`, data).then(r => r.data)
+
+export const adminDeleteRoutineTemplate = (id) =>
+  api.delete(`/admin/routine-templates/${id}`).then(r => r.data)
+
+export const adminAssignRoutineTemplate = (id, userId) =>
+  api.post(`/admin/routine-templates/${id}/assign`, { user_id: userId }).then(r => r.data)
+
 export const uploadAvatar = (file) => {
   const formData = new FormData()
   formData.append('avatar', file)

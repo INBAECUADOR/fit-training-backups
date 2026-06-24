@@ -15,6 +15,7 @@ const calorieRoutes = require('./routes/calories');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
 const avatarRoutes = require('./routes/avatar');
+const routineTemplateRoutes = require('./routes/routineTemplates');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +56,7 @@ app.use('/api/calories', calorieRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/avatar', avatarRoutes);
+app.use('/api/admin/routine-templates', routineTemplateRoutes);
 
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

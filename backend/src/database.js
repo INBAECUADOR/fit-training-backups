@@ -136,6 +136,25 @@ async function getDb() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS routine_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT ''
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS routine_template_exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER NOT NULL,
+    day_name TEXT NOT NULL,
+    name TEXT NOT NULL,
+    series INTEGER DEFAULT 0,
+    reps INTEGER DEFAULT 0,
+    rest TEXT DEFAULT '',
+    observation TEXT DEFAULT '',
+    gif_url TEXT DEFAULT '',
+    FOREIGN KEY (template_id) REFERENCES routine_templates(id) ON DELETE CASCADE
+  )`);
+
   saveDb();
   return db;
 }
