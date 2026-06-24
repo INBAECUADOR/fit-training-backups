@@ -109,13 +109,14 @@ async function start() {
   console.log('Database initialized');
   const { migrate } = require('./migrate');
   await migrate(db);
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
   const { seed, seedGlobalExercises, seedTestUsers } = require('./seed');
   await seed();
   await seedGlobalExercises();
   await seedTestUsers();
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  console.log('All seed data ready');
 }
 
 start().catch(console.error);
