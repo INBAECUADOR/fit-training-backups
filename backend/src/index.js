@@ -16,9 +16,10 @@ const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
 const avatarRoutes = require('./routes/avatar');
 const routineTemplateRoutes = require('./routes/routineTemplates');
+const backupRoutes = require('./routes/backup');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || process.env.RAILWAY_PORT || 3001;
 
 // Security headers
 app.use(helmet({
@@ -27,9 +28,10 @@ app.use(helmet({
 }));
 
 // CORS
+const isProd = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://app.enriquezmania.com';
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? CORS_ORIGIN : '*',
+  origin: isProd ? CORS_ORIGIN : '*',
   credentials: true,
 }));
 
@@ -57,6 +59,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/avatar', avatarRoutes);
 app.use('/api/admin/routine-templates', routineTemplateRoutes);
+app.use('/api/admin/backup', backupRoutes);
 
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -101,7 +104,8 @@ app.use((err, req, res, next) => {
   if (err.name === 'UnauthorizedError' || err.message?.includes('token')) {
     return res.status(401).json({ error: 'Sesión inválida' });
   }
-  res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Error interno del servidor' : err.message });
+  const isProd = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
+  res.status(500).json({ error: isProd ? 'Error interno del servidor' : err.message });
 });
 
 async function start() {

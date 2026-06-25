@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 
 function getSecret() {
   if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === 'production') {
+  const isProd = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
+  if (isProd) {
     throw new Error('JWT_SECRET environment variable is required in production');
   }
   return 'dev-secret-do-not-use-in-production';

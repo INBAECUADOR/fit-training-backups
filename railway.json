@@ -9,6 +9,9 @@
   "volumes": [
     {
       "mountPath": "/app/backend/data"
+    },
+    {
+      "mountPath": "/app/backend/uploads"
     }
   ]
 }

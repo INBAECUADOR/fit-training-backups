@@ -11,10 +11,11 @@ import {
   adminGetMotivation, adminCreateMotivation, adminDeleteMotivation,
   adminGetApiKey, adminSetApiKey,
 } from '../api'
-import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw, MessageCircle, Key, Layers } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, Dumbbell, ChevronDown, ChevronUp, Utensils, TrendingUp, ExternalLink, Search, Globe, BookOpen, Users as UsersIcon, Camera, Bot, Loader2, AlertCircle, Check, User, Apple, RefreshCw, MessageCircle, Key, Layers, Shield } from 'lucide-react'
 import { useToast } from '../components/Toast'
 import { useNavigate } from 'react-router-dom'
 import AdminRoutineTemplates from './AdminRoutineTemplates'
+import AdminBackup from './AdminBackup'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const MEAL_TIMES = [
@@ -433,6 +434,7 @@ export default function Admin() {
             { key: 'users', label: 'Usuarios', icon: UsersIcon },
             { key: 'catalog', label: 'Catálogo', icon: BookOpen },
             { key: 'templates', label: 'Rutinas', icon: Layers },
+            { key: 'backup', label: 'Backup', icon: Shield },
             { key: 'ai', label: 'Agente IA', icon: Bot },
             { key: 'motivation', label: 'Motivación', icon: MessageCircle },
           ].filter(t => !(isRootAdmin && t.hideForAdmin)).map(t => (
@@ -1433,6 +1435,9 @@ export default function Admin() {
 
         {/* ======== TAB: TEMPLATES ======== */}
         {tab === 'templates' && <AdminRoutineTemplates />}
+
+        {/* ======== TAB: BACKUP ======== */}
+        {tab === 'backup' && <AdminBackup />}
 
         {/* ======== TAB: MOTIVATION ======== */}
         {tab === 'motivation' && (

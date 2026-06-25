@@ -248,4 +248,19 @@ export const uploadAvatar = (file) => {
 export const changePassword = (data) =>
   api.put('/auth/password', data).then(r => r.data)
 
+export const adminBackupDownload = () =>
+  api.get('/admin/backup', { responseType: 'blob' }).then(r => {
+    const blob = new Blob([r.data], { type: 'application/zip' })
+    return blob
+  })
+
+export const adminBackupRestore = (file) => {
+  const formData = new FormData()
+  formData.append('backup', file)
+  return api.post('/admin/backup/restore', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000,
+  }).then(r => r.data)
+}
+
 export default api
