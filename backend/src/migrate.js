@@ -6,9 +6,22 @@ async function migrate(db) {
   
   console.log('Running migrations...');
 
-  // Ensure required columns exist on global_exercises (safe to run multiple times)
+  // Ensure required columns exist on all tables (safe to run multiple times)
   try { q("ALTER TABLE global_exercises ADD COLUMN name_es TEXT DEFAULT ''", []); } catch (e) {}
   try { q("ALTER TABLE global_exercises ADD COLUMN ge_id TEXT DEFAULT ''", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN shoulders REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN chest REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN back REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN neck REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN biceps REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN forearms REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN wrist REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN mid_abdomen REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN hips REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN thigh REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN mid_thigh REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN calf REAL DEFAULT 0", []); } catch (e) {}
+  try { q("ALTER TABLE measurements ADD COLUMN height REAL DEFAULT 0", []); } catch (e) {}
   
   // 0. Fix admin name
   q("UPDATE users SET name = 'Admin' WHERE id = 1 AND name != 'Admin'", []);
