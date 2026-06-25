@@ -2,6 +2,7 @@ const express = require('express');
 const archiver = require('archiver');
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const { getDb, saveDb, closeDb } = require('../database');
 const { authenticate } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
@@ -12,17 +13,17 @@ router.use(authenticate, requireAdmin);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 } });
 
-router.get('/', async (req, res) => {
-  try {
-    saveDb();
-    const dbPath = path.join(__dirname, '..', 'data', 'fittraining.db');
-    const uploadsPath = path.join(__dirname, '..', 'uploads');
+async function createBackupBuffer() {
+  saveDb();
+  const dbPath = path.join(__dirname, '..', 'data', 'fittraining.db');
+  const uploadsPath = path.join(__dirname, '..', 'uploads');
 
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename=backup-${new Date().toISOString().slice(0, 10)}.zip`);
-
+  return new Promise((resolve, reject) => {
+    const chunks = [];
     const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.pipe(res);
+    archive.on('data', c => chunks.push(c));
+    archive.on('end', () => resolve(Buffer.concat(chunks)));
+    archive.on('error', reject);
 
     if (fs.existsSync(dbPath)) {
       archive.file(dbPath, { name: 'fittraining.db' });
@@ -30,8 +31,16 @@ router.get('/', async (req, res) => {
     if (fs.existsSync(uploadsPath)) {
       archive.directory(uploadsPath, 'uploads');
     }
+    archive.finalize();
+  });
+}
 
-    await archive.finalize();
+router.get('/', async (req, res) => {
+  try {
+    const buffer = await createBackupBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename=backup-${new Date().toISOString().slice(0, 10)}.zip`);
+    res.send(buffer);
   } catch (err) {
     console.error('Backup error:', err);
     res.status(500).json({ error: 'Error al crear backup' });
@@ -80,6 +89,137 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
   } catch (err) {
     console.error('Restore error:', err);
     res.status(500).json({ error: 'Error al restaurar backup: ' + err.message });
+  }
+});
+
+// POST /cron — Automatic daily backup to GitHub Releases
+// Protected by CRON_SECRET env var (passed as ?secret= or x-cron-secret header)
+router.post('/cron', async (req, res) => {
+  try {
+    const secret = req.query.secret || req.headers['x-cron-secret'];
+    if (!secret || secret !== process.env.CRON_SECRET) {
+      return res.status(403).json({ error: 'Invalid cron secret' });
+    }
+
+    const token = process.env.BACKUP_GITHUB_TOKEN;
+    const repo = process.env.BACKUP_GITHUB_REPO;
+    if (!token || !repo) {
+      return res.status(400).json({ error: 'BACKUP_GITHUB_TOKEN y BACKUP_GITHUB_REPO no configurados' });
+    }
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const tag = `backup-${dateStr}`;
+
+    const buffer = await createBackupBuffer();
+
+    // 1. Create GitHub Release
+    const releaseRes = await fetch(`https://api.github.com/repos/${repo}/releases`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'fit-training-app-backup',
+      },
+      body: JSON.stringify({
+        tag_name: tag,
+        name: `Backup ${dateStr}`,
+        body: `Backup automático del ${dateStr}`,
+        prerelease: false,
+      }),
+    });
+
+    if (!releaseRes.ok) {
+      const errText = await releaseRes.text();
+      // If release already exists, delete old release and retry
+      if (releaseRes.status === 422) {
+        // Get existing release and delete it
+        const getRes = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'fit-training-app-backup',
+          },
+        });
+        if (getRes.ok) {
+          const existing = await getRes.json();
+          await fetch(`https://api.github.com/repos/${repo}/releases/${existing.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'fit-training-app-backup',
+            },
+          });
+          // Delete tag too
+          await fetch(`https://api.github.com/repos/${repo}/git/refs/tags/${tag}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'fit-training-app-backup',
+            },
+          });
+          // Retry creating release
+          const retryRes = await fetch(`https://api.github.com/repos/${repo}/releases`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'fit-training-app-backup',
+            },
+            body: JSON.stringify({
+              tag_name: tag,
+              name: `Backup ${dateStr}`,
+              body: `Backup automático del ${dateStr}`,
+              prerelease: false,
+            }),
+          });
+          if (!retryRes.ok) {
+            return res.status(500).json({ error: 'Error al crear release: ' + await retryRes.text() });
+          }
+        }
+      } else {
+        return res.status(500).json({ error: 'Error al crear release: ' + errText });
+      }
+    }
+
+    // Get the release ID (might have been created by retry or original)
+    const finalRelease = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'fit-training-app-backup',
+      },
+    });
+    if (!finalRelease.ok) {
+      return res.status(500).json({ error: 'Error al obtener release creado' });
+    }
+    const releaseData = await finalRelease.json();
+
+    // 2. Upload ZIP as release asset
+    const uploadUrl = releaseData.upload_url.replace('{?name,label}', '');
+    const assetRes = await fetch(`${uploadUrl}?name=backup-${dateStr}.zip`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/zip',
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'fit-training-app-backup',
+        'Content-Length': String(buffer.length),
+      },
+      body: buffer,
+    });
+
+    if (!assetRes.ok) {
+      return res.status(500).json({ error: 'Error al subir asset: ' + await assetRes.text() });
+    }
+
+    res.json({ message: `Backup subido a ${repo} como release ${tag}`, size: buffer.length });
+  } catch (err) {
+    console.error('GitHub backup error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 

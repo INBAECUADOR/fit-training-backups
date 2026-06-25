@@ -6,6 +6,10 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   },
+  "cron": {
+    "schedule": "0 9 * * *",
+    "command": "node backend/src/cron-backup.js"
+  },
   "volumes": [
     {
       "mountPath": "/app/backend/data"
