@@ -44,6 +44,7 @@ router.get('/', authenticate, async (req, res) => {
     })) : [];
     res.json(measurements);
   } catch (err) {
+    console.error('Error al obtener medidas:', err.message);
     res.status(500).json({ error: 'Error al obtener medidas' });
   }
 });
@@ -86,6 +87,7 @@ router.post('/', authenticate, upload.fields([
     saveDb();
     res.json({ message: 'Medidas guardadas' });
   } catch (err) {
+    console.error('Error al guardar medidas:', err.message);
     res.status(500).json({ error: 'Error al guardar medidas' });
   }
 });
@@ -102,6 +104,7 @@ router.get('/weight', authenticate, async (req, res) => {
       ? result[0].values.map(row => ({ weight: row[0], date: row[1] })) : [];
     res.json(weights);
   } catch (err) {
+    console.error('Error al obtener peso:', err.message);
     res.status(500).json({ error: 'Error al obtener peso' });
   }
 });
@@ -117,6 +120,7 @@ router.post('/weight', authenticate, async (req, res) => {
     saveDb();
     res.json({ message: 'Peso guardado' });
   } catch (err) {
+    console.error('Error al guardar peso:', err.message);
     res.status(500).json({ error: 'Error al guardar peso' });
   }
 });
@@ -172,6 +176,7 @@ router.get('/composition', authenticate, async (req, res) => {
 
     res.json({ bf, bfCategory, leanMass, fatMass, weight, height, neck, waist, hips, gender, date: result[0].values[0][4] });
   } catch (err) {
+    console.error('Error en composition:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -192,6 +197,7 @@ router.get('/history', authenticate, async (req, res) => {
     })) : [];
     res.json(rows);
   } catch (err) {
+    console.error('Error en history:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -259,6 +265,7 @@ router.put('/:id', authenticate, upload.fields([
     saveDb();
     res.json({ message: 'Medida actualizada' });
   } catch (err) {
+    console.error('Error al actualizar medida:', err.message);
     res.status(500).json({ error: 'Error al actualizar medida' });
   }
 });
@@ -280,6 +287,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     saveDb();
     res.json({ message: 'Medida eliminada' });
   } catch (err) {
+    console.error('Error al eliminar medida:', err.message);
     res.status(500).json({ error: 'Error al eliminar medida' });
   }
 });
