@@ -9,6 +9,10 @@ const multer = require('multer');
 
 const router = express.Router();
 router.use(authenticate, requireAdmin);
+router.use(function(req, res, next) {
+  console.error('BACKUP ROUTE HIT:', req.method, req.originalUrl, req.path);
+  next();
+});
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 } });
 
@@ -17,7 +21,12 @@ function getDbPath() {
 }
 
 router.get('/', function (req, res) {
+  console.error('=== GET / BACKUP HANDLER CALLED ===');
   res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+router.get('/test', function(req, res) {
+  res.json({ test: true, path: req.path, url: req.originalUrl });
 });
 
 router.get('/db', async (req, res) => {
