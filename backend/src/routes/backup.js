@@ -25,7 +25,7 @@ async function createBackupBuffer() {
   return new Promise((resolve, reject) => {
     const chunks = [];
     try {
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      const archive = new archiver.ZipArchive({ zlib: { level: 9 } });
       archive.on('data', c => chunks.push(c));
       archive.on('end', () => resolve(Buffer.concat(chunks)));
       archive.on('error', reject);
@@ -34,7 +34,14 @@ async function createBackupBuffer() {
         archive.file(dbPath, { name: 'fittraining.db' });
       }
       if (fs.existsSync(uploadsPath)) {
-        archive.directory(uploadsPath, 'uploads');
+        try {
+          const uploadFiles = fs.readdirSync(uploadsPath);
+          if (uploadFiles.length > 0) {
+            archive.directory(uploadsPath, 'uploads');
+          }
+        } catch (e) {
+          console.error('Error adding uploads to backup:', e.message);
+        }
       }
       archive.finalize();
     } catch (err) {
