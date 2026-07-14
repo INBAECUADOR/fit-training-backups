@@ -16,15 +16,21 @@ function getDbPath() {
   return path.join(__dirname, '..', 'data', 'fittraining.db');
 }
 
-router.get('/', (req, res) => {
-  saveDb();
-  const dbPath = getDbPath();
-  if (!fs.existsSync(dbPath)) {
-    return res.status(404).json({ error: 'Base de datos no encontrada' });
+router.get('/', async (req, res) => {
+  try {
+    saveDb();
+    const dbPath = getDbPath();
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ error: 'Base de datos no encontrada' });
+    }
+    const data = fs.readFileSync(dbPath);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename=fittraining-${new Date().toISOString().slice(0, 10)}.db`);
+    res.send(data);
+  } catch (err) {
+    console.error('Backup error:', err);
+    res.status(500).json({ error: 'Error al crear backup: ' + err.message });
   }
-  res.setHeader('Content-Type', 'application/octet-stream');
-  res.setHeader('Content-Disposition', `attachment; filename=fittraining-${new Date().toISOString().slice(0, 10)}.db`);
-  res.sendFile(dbPath);
 });
 
 router.get('/db', async (req, res) => {
