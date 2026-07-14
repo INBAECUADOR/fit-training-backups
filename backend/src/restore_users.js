@@ -93,44 +93,64 @@ function makeMeals(mealTypes) {
 async function restoreUser(user, token, isJorge) {
   const authHeaders = { Authorization: `Bearer ${token}` };
 
-  // Create user
-  const created = await api('/admin/users', {
-    method: 'POST',
-    headers: authHeaders,
-    body: JSON.stringify(user),
-  });
-  const uid = created.id;
-  console.log(`Created ${user.name} (id=${uid})`);
+  // Check if user exists
+  const allUsers = await api('/admin/users', { headers: authHeaders });
+  let existing = allUsers.find(u => u.document_id === user.document_id);
+  let uid;
+
+  if (existing) {
+    uid = existing.id;
+    console.log(`${user.name} already exists (id=${uid}), restoring exercises/meals`);
+  } else {
+    const created = await api('/admin/users', {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify(user),
+    });
+    uid = created.id;
+    console.log(`Created ${user.name} (id=${uid})`);
+  }
 
   // Get routines
   const routines = await api(`/admin/routines?user_id=${uid}`, { headers: authHeaders });
   console.log(`  ${routines.length} routines`);
 
-  // Add exercises (3 per routine)
-  const exercisePool = isJorge ? JORGE_EXERCISES : EXERCISES;
-  for (let i = 0; i < routines.length; i++) {
-    const r = routines[i];
-    for (let j = 0; j < 3; j++) {
-      const ex = exercisePool[(i * 3 + j) % exercisePool.length];
-      await api('/admin/exercises', {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({ routine_id: r.id, ...ex }),
-      });
+  // Check if exercises exist
+  const existingEx = await api(`/admin/exercises?user_id=${uid}`, { headers: authHeaders });
+  if (existingEx.length === 0) {
+    const exercisePool = isJorge ? JORGE_EXERCISES : EXERCISES;
+    for (let i = 0; i < routines.length; i++) {
+      const r = routines[i];
+      for (let j = 0; j < 3; j++) {
+        const ex = exercisePool[(i * 3 + j) % exercisePool.length];
+        await api('/admin/exercises', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ routine_id: r.id, ...ex }),
+        });
+      }
     }
+    console.log(`  21 exercises added`);
+  } else {
+    console.log(`  ${existingEx.length} exercises already exist, skipping`);
   }
-  console.log(`  21 exercises added`);
 
   // Add meals
-  const mealTypes = isJorge ? JORGE_MEAL_TYPES : MEAL_TYPES;
-  const meals = makeMeals(mealTypes);
-  await api(`/diet/?user_id=${uid}`, {
-    method: 'PUT',
-    headers: authHeaders,
-    body: JSON.stringify(meals),
-  });
-  const mealCount = 7 * mealTypes.length;
-  console.log(`  ${mealCount} meals added`);
+  const existingMeals = await api(`/diet/?user_id=${uid}`, { headers: authHeaders });
+  const hasMeals = Object.keys(existingMeals).length > 0;
+  if (!hasMeals) {
+    const mealTypes = isJorge ? JORGE_MEAL_TYPES : MEAL_TYPES;
+    const meals = makeMeals(mealTypes);
+    await api(`/diet/?user_id=${uid}`, {
+      method: 'PUT',
+      headers: authHeaders,
+      body: JSON.stringify(meals),
+    });
+    const mealCount = 7 * mealTypes.length;
+    console.log(`  ${mealCount} meals added`);
+  } else {
+    console.log(`  meals already exist, skipping`);
+  }
 
   return uid;
 }

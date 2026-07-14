@@ -357,6 +357,12 @@ async function migrate(db) {
     ['10000119', 'Mariana Lozada'], ['10000120', 'Nelson Lopez'],
     ['10000121', 'Mauro Cabrera'],
   ];
+  const customUsers = [
+    ['10000011', 'Paul Diaz', '123456'],
+    ['10000012', 'Diego Perez', '123456'],
+    ['10000013', 'Jorge Rodriguez', '123456'],
+  ];
+  const dayLabels = [['Lunes','Día 1'],['Martes','Día 2'],['Miércoles','Día 3'],['Jueves','Día 4'],['Viernes','Día 5'],['Sábado','Día 6'],['Domingo','Día 7']];
   let reportCreated = 0;
   for (const [doc, name] of reportUsers) {
     const existing = qOne("SELECT id FROM users WHERE document_id = ?", [doc]);
@@ -364,12 +370,23 @@ async function migrate(db) {
       const hash = bcrypt.hashSync('1234', 10);
       q("INSERT INTO users (document_id, name, password, role, email) VALUES (?, ?, ?, 'user', '')", [doc, name, hash]);
       const uid = qOne("SELECT last_insert_rowid()")[0];
-      const days = [['Lunes','Día 1'],['Martes','Día 2'],['Miércoles','Día 3'],['Jueves','Día 4'],['Viernes','Día 5']];
-      for (const [dn, dl] of days) q("INSERT INTO routines (user_id, day_name, day_label) VALUES (?, ?, ?)", [uid, dn, dl]);
+      for (const [dn, dl] of dayLabels.slice(0, 5)) q("INSERT INTO routines (user_id, day_name, day_label) VALUES (?, ?, ?)", [uid, dn, dl]);
       reportCreated++;
     }
   }
+  let customCreated = 0;
+  for (const [doc, name, pass] of customUsers) {
+    const existing = qOne("SELECT id FROM users WHERE document_id = ?", [doc]);
+    if (!existing) {
+      const hash = bcrypt.hashSync(pass, 10);
+      q("INSERT INTO users (document_id, name, password, role, email) VALUES (?, ?, ?, 'user', '')", [doc, name, hash]);
+      const uid = qOne("SELECT last_insert_rowid()")[0];
+      for (const [dn, dl] of dayLabels) q("INSERT INTO routines (user_id, day_name, day_label) VALUES (?, ?, ?)", [uid, dn, dl]);
+      customCreated++;
+    }
+  }
   if (reportCreated) console.log('Created', reportCreated, 'report users');
+  if (customCreated) console.log('Created', customCreated, 'custom users (Paul/Diego/Jorge)');
 
   // 10. Insert measurements from report
   const measurements = [
