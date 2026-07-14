@@ -16,27 +16,15 @@ function getDbPath() {
   return path.join(__dirname, '..', 'data', 'fittraining.db');
 }
 
-router.get('/', async (req, res) => {
-  try {
-    saveDb();
-    const dbPath = getDbPath();
-    if (!fs.existsSync(dbPath)) {
-      return res.status(404).json({ error: 'Base de datos no encontrada' });
-    }
-    const dbBuffer = fs.readFileSync(dbPath);
-    zlib.gzip(dbBuffer, (err, compressed) => {
-      if (err) {
-        console.error('Gzip error:', err);
-        return res.status(500).json({ error: 'Error al comprimir backup' });
-      }
-      res.setHeader('Content-Type', 'application/gzip');
-      res.setHeader('Content-Disposition', `attachment; filename=backup-${new Date().toISOString().slice(0, 10)}.gz`);
-      res.send(compressed);
-    });
-  } catch (err) {
-    console.error('Backup error:', err);
-    res.status(500).json({ error: 'Error al crear backup' });
+router.get('/', (req, res) => {
+  saveDb();
+  const dbPath = getDbPath();
+  if (!fs.existsSync(dbPath)) {
+    return res.status(404).json({ error: 'Base de datos no encontrada' });
   }
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename=fittraining-${new Date().toISOString().slice(0, 10)}.db`);
+  res.sendFile(dbPath);
 });
 
 router.get('/db', async (req, res) => {
