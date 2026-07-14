@@ -17,19 +17,7 @@ function getDbPath() {
 }
 
 router.get('/', function (req, res) {
-  try {
-    saveDb();
-    const dbPath = getDbPath();
-    if (!fs.existsSync(dbPath)) {
-      return res.status(404).json({ error: 'Base de datos no encontrada' });
-    }
-    res.setHeader('Content-Type', 'application/x-sqlite3');
-    res.setHeader('Content-Disposition', `attachment; filename=fittraining-${new Date().toISOString().slice(0, 10)}.db`);
-    return res.sendFile(dbPath);
-  } catch (err) {
-    console.error('Backup error:', err);
-    return res.status(500).json({ error: 'Error al crear backup: ' + err.message });
-  }
+  res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
 router.get('/db', async (req, res) => {
