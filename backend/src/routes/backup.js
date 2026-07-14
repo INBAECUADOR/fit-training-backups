@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const zlib = require('zlib');
 const path = require('path');
 const fs = require('fs');
@@ -25,6 +25,7 @@ router.get('/', function (req, res) {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// BUILD_ID=20260714051102690
 router.get('/test', function(req, res) {
   res.json({ test: true, path: req.path, url: req.originalUrl });
 });
@@ -82,7 +83,7 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
 
     fs.rmSync(extractDir, { recursive: true });
 
-    res.json({ message: 'Backup restaurado correctamente. El servidor se reiniciará para aplicar cambios.' });
+    res.json({ message: 'Backup restaurado correctamente. El servidor se reiniciarÃ¡ para aplicar cambios.' });
     process.exit(0);
   } catch (err) {
     console.error('Restore error:', err);
@@ -102,7 +103,7 @@ async function createBackupBuffer() {
   });
 }
 
-// POST /cron — Automatic daily backup to GitHub Releases
+// POST /cron â€” Automatic daily backup to GitHub Releases
 // Protected by CRON_SECRET env var (passed as ?secret= or x-cron-secret header)
 router.post('/cron', async (req, res) => {
   try {
@@ -134,7 +135,7 @@ router.post('/cron', async (req, res) => {
       body: JSON.stringify({
         tag_name: tag,
         name: `Backup ${dateStr}`,
-        body: `Backup automático del ${dateStr}`,
+        body: `Backup automÃ¡tico del ${dateStr}`,
         prerelease: false,
       }),
     });
@@ -182,7 +183,7 @@ router.post('/cron', async (req, res) => {
             body: JSON.stringify({
               tag_name: tag,
               name: `Backup ${dateStr}`,
-              body: `Backup automático del ${dateStr}`,
+              body: `Backup automÃ¡tico del ${dateStr}`,
               prerelease: false,
             }),
           });
@@ -234,3 +235,4 @@ router.post('/cron', async (req, res) => {
 });
 
 module.exports = router;
+
