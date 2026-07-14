@@ -64,7 +64,7 @@ const exerciseImgSrc = (gifUrl) => {
 export default function Admin() {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const [tab, setTab] = useState('exercises')
+  const [tab, setTab] = useState('users')
 
   // --- User selector ---
   const [users, setUsers] = useState([])
@@ -121,8 +121,6 @@ export default function Admin() {
   useEffect(() => {
     adminGetUsers().then(list => {
       setUsers(list)
-      const firstUser = list.find(u => u.role !== 'admin') || list[0]
-      if (firstUser) setSelectedUserId(firstUser.id)
     }).catch(() => showToast('Error al cargar usuarios', 'error'))
   }, [])
 
@@ -407,22 +405,27 @@ export default function Admin() {
         {/* User selector */}
         <div className="mb-4 flex items-center gap-3 bg-gym-800 p-3 rounded-xl">
           <label className="font-medium text-gray-300 text-sm whitespace-nowrap">Usuario:</label>
-          <select
-            className="flex-1 border border-gym-700 rounded-lg px-3 py-2 bg-gym-900 text-white text-sm"
-            value={selectedUserId || ''}
-            onChange={e => setSelectedUserId(parseInt(e.target.value))}
-          >
-            {users.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.role === 'admin' ? 'Admin' : u.name} ({u.document_id}){u.role === 'admin' ? ' 👑' : ''}
-              </option>
-            ))}
-            {users.length === 0 && <option value="">Cargando...</option>}
-          </select>
+            <select
+              className="flex-1 border border-gym-700 rounded-lg px-3 py-2 bg-gym-900 text-white text-sm"
+              value={selectedUserId || ''}
+              onChange={e => setSelectedUserId(parseInt(e.target.value) || null)}
+            >
+              <option value="">-- Seleccionar usuario --</option>
+              {users.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.role === 'admin' ? 'Admin' : u.name} ({u.document_id}){u.role === 'admin' ? ' 👑' : ''}
+                </option>
+              ))}
+            </select>
         </div>
 
         <h1 className="text-3xl font-extrabold text-white mb-6">
-          {users.find(u => u.id === selectedUserId)?.role === 'admin' ? 'Admin' : (users.find(u => u.id === selectedUserId)?.name || 'Administración')}
+          Panel de Administración
+          {selectedUserId && users.find(u => u.id === selectedUserId)?.role !== 'admin' && (
+            <span className="text-base font-normal text-gym-300 ml-3">
+              → {users.find(u => u.id === selectedUserId)?.name}
+            </span>
+          )}
         </h1>
 
         {/* Tabs */}
