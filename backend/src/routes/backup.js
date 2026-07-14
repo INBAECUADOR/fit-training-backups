@@ -13,25 +13,33 @@ router.use(authenticate, requireAdmin);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 } });
 
+function getDbPath() {
+  return path.join(__dirname, '..', 'data', 'fittraining.db');
+}
+
 async function createBackupBuffer() {
   saveDb();
-  const dbPath = path.join(__dirname, '..', 'data', 'fittraining.db');
+  const dbPath = getDbPath();
   const uploadsPath = path.join(__dirname, '..', 'uploads');
 
   return new Promise((resolve, reject) => {
     const chunks = [];
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.on('data', c => chunks.push(c));
-    archive.on('end', () => resolve(Buffer.concat(chunks)));
-    archive.on('error', reject);
+    try {
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.on('data', c => chunks.push(c));
+      archive.on('end', () => resolve(Buffer.concat(chunks)));
+      archive.on('error', reject);
 
-    if (fs.existsSync(dbPath)) {
-      archive.file(dbPath, { name: 'fittraining.db' });
+      if (fs.existsSync(dbPath)) {
+        archive.file(dbPath, { name: 'fittraining.db' });
+      }
+      if (fs.existsSync(uploadsPath)) {
+        archive.directory(uploadsPath, 'uploads');
+      }
+      archive.finalize();
+    } catch (err) {
+      reject(err);
     }
-    if (fs.existsSync(uploadsPath)) {
-      archive.directory(uploadsPath, 'uploads');
-    }
-    archive.finalize();
   });
 }
 
@@ -43,7 +51,23 @@ router.get('/', async (req, res) => {
     res.send(buffer);
   } catch (err) {
     console.error('Backup error:', err);
-    res.status(500).json({ error: 'Error al crear backup' });
+    res.status(500).json({ error: 'Error al crear backup. Asegurate de que archiver, unzipper y node-fetch esten instalados.' });
+  }
+});
+
+router.get('/db', async (req, res) => {
+  try {
+    saveDb();
+    const dbPath = getDbPath();
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ error: 'Base de datos no encontrada' });
+    }
+    res.setHeader('Content-Type', 'application/x-sqlite3');
+    res.setHeader('Content-Disposition', `attachment; filename=fittraining-${new Date().toISOString().slice(0, 10)}.db`);
+    res.sendFile(dbPath);
+  } catch (err) {
+    console.error('DB download error:', err);
+    res.status(500).json({ error: 'Error al descargar base de datos' });
   }
 });
 
