@@ -1,8 +1,7 @@
 const express = require('express');
-const archiver = require('archiver');
+const zlib = require('zlib');
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch');
 const { getDb, saveDb, closeDb } = require('../database');
 const { authenticate } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
@@ -17,48 +16,26 @@ function getDbPath() {
   return path.join(__dirname, '..', 'data', 'fittraining.db');
 }
 
-async function createBackupBuffer() {
-  saveDb();
-  const dbPath = getDbPath();
-  const uploadsPath = path.join(__dirname, '..', 'uploads');
-
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    try {
-      const archive = new archiver.ZipArchive({ zlib: { level: 9 } });
-      archive.on('data', c => chunks.push(c));
-      archive.on('end', () => resolve(Buffer.concat(chunks)));
-      archive.on('error', reject);
-
-      if (fs.existsSync(dbPath)) {
-        archive.file(dbPath, { name: 'fittraining.db' });
-      }
-      if (fs.existsSync(uploadsPath)) {
-        try {
-          const uploadFiles = fs.readdirSync(uploadsPath);
-          if (uploadFiles.length > 0) {
-            archive.directory(uploadsPath, 'uploads');
-          }
-        } catch (e) {
-          console.error('Error adding uploads to backup:', e.message);
-        }
-      }
-      archive.finalize();
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
 router.get('/', async (req, res) => {
   try {
-    const buffer = await createBackupBuffer();
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename=backup-${new Date().toISOString().slice(0, 10)}.zip`);
-    res.send(buffer);
+    saveDb();
+    const dbPath = getDbPath();
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ error: 'Base de datos no encontrada' });
+    }
+    const dbBuffer = fs.readFileSync(dbPath);
+    zlib.gzip(dbBuffer, (err, compressed) => {
+      if (err) {
+        console.error('Gzip error:', err);
+        return res.status(500).json({ error: 'Error al comprimir backup' });
+      }
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', `attachment; filename=backup-${new Date().toISOString().slice(0, 10)}.gz`);
+      res.send(compressed);
+    });
   } catch (err) {
     console.error('Backup error:', err);
-    res.status(500).json({ error: 'Error al crear backup. Asegurate de que archiver, unzipper y node-fetch esten instalados.' });
+    res.status(500).json({ error: 'Error al crear backup' });
   }
 });
 
@@ -122,6 +99,18 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
     res.status(500).json({ error: 'Error al restaurar backup: ' + err.message });
   }
 });
+
+async function createBackupBuffer() {
+  saveDb();
+  const dbPath = getDbPath();
+  const dbBuffer = fs.readFileSync(dbPath);
+  return new Promise((resolve, reject) => {
+    zlib.gzip(dbBuffer, (err, compressed) => {
+      if (err) reject(err);
+      else resolve(compressed);
+    });
+  });
+}
 
 // POST /cron — Automatic daily backup to GitHub Releases
 // Protected by CRON_SECRET env var (passed as ?secret= or x-cron-secret header)
@@ -231,11 +220,11 @@ router.post('/cron', async (req, res) => {
 
     // 2. Upload ZIP as release asset
     const uploadUrl = releaseData.upload_url.replace('{?name,label}', '');
-    const assetRes = await fetch(`${uploadUrl}?name=backup-${dateStr}.zip`, {
+    const assetRes = await fetch(`${uploadUrl}?name=backup-${dateStr}.db.gz`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/zip',
+        'Content-Type': 'application/gzip',
         'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'fit-training-app-backup',
         'Content-Length': String(buffer.length),
