@@ -17,12 +17,23 @@ router.use(function(req, res, next) {
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 } });
 
 function getDbPath() {
-  return path.join(__dirname, '..', 'data', 'fittraining.db');
+  return path.join(__dirname, '..', '..', 'data', 'fittraining.db');
 }
 
-router.get('/', function (req, res) {
-  console.error('=== GET / BACKUP HANDLER CALLED ===');
-  res.json({ status: 'ok', time: new Date().toISOString() });
+router.get('/', async (req, res) => {
+  try {
+    saveDb();
+    const dbPath = getDbPath();
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ error: 'Base de datos no encontrada' });
+    }
+    res.setHeader('Content-Type', 'application/x-sqlite3');
+    res.setHeader('Content-Disposition', `attachment; filename=fittraining-${new Date().toISOString().slice(0, 10)}.db`);
+    res.sendFile(dbPath);
+  } catch (err) {
+    console.error('Backup error:', err);
+    res.status(500).json({ error: 'Error al crear backup: ' + err.message });
+  }
 });
 
 // BUILD_ID=20260714051102690
@@ -67,9 +78,9 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
         .on('error', reject);
     });
 
-    const dbPath = path.join(__dirname, '..', 'data', 'fittraining.db');
+    const dbPath = path.join(__dirname, '..', '..', 'data', 'fittraining.db');
     const restoreDb = path.join(extractDir, 'fittraining.db');
-    const uploadsPath = path.join(__dirname, '..', 'uploads');
+    const uploadsPath = path.join(__dirname, '..', '..', 'uploads');
     const restoreUploads = path.join(extractDir, 'uploads');
 
     if (fs.existsSync(restoreDb)) {
