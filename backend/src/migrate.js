@@ -374,6 +374,14 @@ async function migrate(db) {
       reportCreated++;
     }
   }
+  const exerciseNames = [
+    'Press banca','Remo con barra','Press militar','Sentadilla','Peso muerto',
+    'Curl bíceps','Fondos en paralelas','Jalón al pecho','Elevación lateral','Prensa de piernas',
+    'Curl femoral','Extensiones de pierna','Cruce de poleas','Pájaro','Encogimientos',
+    'Elevación de talones','Remo en máquina','Press inclinado','Polea al rostro','Peso muerto rumano','Press con mancuernas',
+  ];
+  const mealTypes = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena', 'Post-entreno'];
+  const mealTypesJorge = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'];
   let customCreated = 0;
   for (const [doc, name, pass] of customUsers) {
     const existing = qOne("SELECT id FROM users WHERE document_id = ?", [doc]);
@@ -382,11 +390,30 @@ async function migrate(db) {
       q("INSERT INTO users (document_id, name, password, role, email) VALUES (?, ?, ?, 'user', '')", [doc, name, hash]);
       const uid = qOne("SELECT last_insert_rowid()")[0];
       for (const [dn, dl] of dayLabels) q("INSERT INTO routines (user_id, day_name, day_label) VALUES (?, ?, ?)", [uid, dn, dl]);
+      // Add exercises (3 per routine)
+      const isJorge = doc === '10000013';
+      const routines = q("SELECT id FROM routines WHERE user_id = ? ORDER BY id", [uid]);
+      if (routines.length) {
+        for (let i = 0; i < routines[0].values.length; i++) {
+          const rid = routines[0].values[i][0];
+          for (let j = 0; j < 3; j++) {
+            const idx = (i * 3 + j) % exerciseNames.length;
+            q("INSERT INTO exercises (routine_id, name, series, reps) VALUES (?, ?, ?, ?)", [rid, exerciseNames[idx], 4, 10]);
+          }
+        }
+      }
+      // Add meals
+      const mt = isJorge ? mealTypesJorge : mealTypes;
+      for (const [dn] of dayLabels) {
+        for (const m of mt) {
+          q("INSERT INTO diets (user_id, day_name, meal_type, description) VALUES (?, ?, ?, ?)", [uid, dn, m, 'Comida ' + m.toLowerCase() + ' de ' + dn]);
+        }
+      }
       customCreated++;
     }
   }
   if (reportCreated) console.log('Created', reportCreated, 'report users');
-  if (customCreated) console.log('Created', customCreated, 'custom users (Paul/Diego/Jorge)');
+  if (customCreated) console.log('Created', customCreated, 'custom users with exercises and meals');
 
   // 10. Insert measurements from report
   const measurements = [
