@@ -9,7 +9,7 @@ const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { error: 'Demasiados intentos. Esperá 15 minutos.' },
+  message: { error: 'Demasiados intentos. Espera 15 minutos.' },
   standardHeaders: true, legacyHeaders: false,
 });
 
@@ -47,7 +47,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (isLocked(db, credential, ip)) {
       auditLog(db, credential, false, ip);
       saveDb();
-      return res.status(429).json({ error: 'Cuenta temporalmente bloqueada por muchos intentos. Esperá 15 minutos.' });
+      return res.status(429).json({ error: 'Cuenta temporalmente bloqueada por muchos intentos. Espera 15 minutos.' });
     }
 
     let userRow = null;
