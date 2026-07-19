@@ -123,6 +123,8 @@ async function start() {
   await seed();
   await seedGlobalExercises();
   await seedTestUsers();
+  const { seedProductionUsers } = require('./seed-production');
+  await seedProductionUsers();
   console.log('All seed data ready');
 }
 
