@@ -139,19 +139,20 @@ async function migrate(db) {
     [1052, 'rjiM4L3'], [1053, 'rjiM4L3'], [1054, 'rjtuP6X'], [1055, 'a8VDgLw'], [1056, 'CcWEoWV'],
     [1057, 'EIeI8Vf'], [1058, 'SpYC0Kp'], [1059, '0CXGHya'],
     [1060, '2NpxjC1'], [1061, 'DhMl549'], [1062, '10Z2DXU'],
-    [1063, 'Ul5OFSV'], [1064, 'CmEr4pM'], [1065, '6cKQC5E'],
-    [1066, 'LEprlgG'], [1067, '9tvVVM9'], [1068, '67n3r98'],
+    [1063, 'https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/quads/lever-leg-extension.gif'], [1064, 'CmEr4pM'], [1065, '6cKQC5E'],
+    [1066, 'LEprlgG'], [1067, 'https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/triceps/cable-triceps-pushdown-v-bar.gif'], [1068, '67n3r98'],
     [1069, 'f1jf47L'], [1070, 'aTNKZiC'], [1071, '1xHyxys'],
-    [1072, '17lJ1kr'], [1073, '4f8RXP8'], [1074, 'A3P4O0R'],
+    [1072, '17lJ1kr'], [1073, '4f8RXP8'], [1074, 'https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/upper-back/cable-rope-seated-row.gif'],
     [1075, 'hBGWILP'], [1076, 'NN8nSNT'], [1077, '0CXGHya'],
     [1078, 'FVmZVhk'], [1079, '8eqjhOl'], [1080, 'eZyBC3j'],
     [1081, 'jHAnWmT'], [1082, 'C0MA9bC'], [1083, '0S75mYG'],
-    [1084, '0jp9Rlz'], [1085, '1V1gj1u'], [1086, '5ipN0iE'],
+    [1084, '0jp9Rlz'], [1085, '1V1gj1u'], [1086, 'https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/lats/assisted-pull-up.gif'],
     [1087, 'qKBpF7I'], [1088, '17lJ1kr'], [1089, 'HEJ6DIX'],
     [1090, 'KtRomty'],
   ];
   for (const [id, exId] of gifUpdate) {
-    q("UPDATE global_exercises SET gif_url = ? WHERE id = ?", [`https://static.exercisedb.dev/media/${exId}.gif`, id]);
+    const url = exId.startsWith('http') ? exId : `https://static.exercisedb.dev/media/${exId}.gif`;
+    q("UPDATE global_exercises SET gif_url = ? WHERE id = ?", [url, id]);
   }
   console.log('Updated', gifUpdate.length, 'global_exercise GIF URLs');
   
