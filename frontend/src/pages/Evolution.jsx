@@ -160,8 +160,8 @@ export default function Evolution() {
         {measurements.length === 0 && !showForm && (
           <motion.div variants={fadeUp} className="text-center py-20 bg-gym-800/30 border border-gym-700/30 rounded-2xl">
             <Camera size={40} className="text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-400 font-semibold mb-1">Aún no tenés mediciones</p>
-            <p className="text-gray-600 text-sm mb-4">Registrá tu peso, medidas y fotos para ver tu evolución</p>
+            <p className="text-gray-400 font-semibold mb-1">Aún no tienes mediciones</p>
+            <p className="text-gray-600 text-sm mb-4">Registra tu peso, medidas y fotos para ver tu evolución</p>
             <button onClick={() => setShowForm(true)} className="btn-primary text-sm">
               Registrar primera medición
             </button>

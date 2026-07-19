@@ -116,7 +116,7 @@ export default function AdminRoutineTemplates() {
   }
 
   const handleAssign = async (templateId) => {
-    if (!assignUserId) { showToast('Seleccioná un usuario', 'error'); return }
+    if (!assignUserId) { showToast('Selecciona un usuario', 'error'); return }
     setAssigningId(templateId)
     try {
       const res = await adminAssignRoutineTemplate(templateId, parseInt(assignUserId))
@@ -289,7 +289,7 @@ export default function AdminRoutineTemplates() {
           )
         })}
         {templates.length === 0 && (
-          <p className="text-gray-500 text-center py-8">No hay plantillas aún. Creá la primera.</p>
+          <p className="text-gray-500 text-center py-8">No hay plantillas aún. Crea la primera.</p>
         )}
       </div>
     </div>

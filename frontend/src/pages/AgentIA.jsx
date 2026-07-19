@@ -36,7 +36,7 @@ export default function AgentIA() {
 
   const handleGenerate = async () => {
     if (!form.age || !form.trainingDays || !form.mealsPerDay) {
-      setError('Completá al menos edad, días de entrenamiento y comidas al día')
+      setError('Completa al menos edad, días de entrenamiento y comidas al día')
       return
     }
     setGenerating(true)
@@ -54,7 +54,7 @@ export default function AgentIA() {
   }
 
   const handleApprove = async () => {
-    if (!selectedUser) { setError('Seleccioná un usuario para asignar el plan'); return }
+    if (!selectedUser) { setError('Selecciona un usuario para asignar el plan'); return }
     setSaving(true)
     setError('')
     setSuccess('')
@@ -207,7 +207,7 @@ export default function AgentIA() {
             {!result && !generating && !error && (
               <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-10 text-center">
                 <Bot size={48} className="text-gym-700 mx-auto mb-4" />
-                <p className="text-gray-500">Completá los datos del cliente y generá el plan</p>
+                <p className="text-gray-500">Completa los datos del cliente y genera el plan</p>
               </div>
             )}
 

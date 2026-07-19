@@ -54,7 +54,7 @@ export default function Login() {
               value={credential}
               onChange={e => setCredential(e.target.value)}
               className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
-              placeholder="Ingresá tu email o documento"
+              placeholder="Ingresa tu email o documento"
               required
             />
           </div>
@@ -65,7 +65,7 @@ export default function Login() {
               value={pass}
               onChange={e => setPass(e.target.value)}
               className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all"
-              placeholder="Ingresá tu contraseña"
+              placeholder="Ingresa tu contraseña"
               required
             />
           </div>

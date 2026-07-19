@@ -288,7 +288,7 @@ export default function Dashboard() {
               </div>
             </div>
             <form onSubmit={handleWeightSave} className="flex gap-2">
-              <input type="number" step="0.1" value={weightInput} onChange={e => setWeightInput(e.target.value)} placeholder="Registrá tu peso" className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all" />
+              <input type="number" step="0.1" value={weightInput} onChange={e => setWeightInput(e.target.value)} placeholder="Registra tu peso" className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all" />
               <button type="submit" className={`px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-lg ${weightSaved ? 'bg-emerald-500 text-white scale-in' : 'bg-gradient-to-r from-gym-400 to-orange-500 text-white hover:brightness-110'}`}>
                 {weightSaved ? '✓' : 'Guardar'}
               </button>

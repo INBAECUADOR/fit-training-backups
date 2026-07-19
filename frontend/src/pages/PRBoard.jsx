@@ -110,7 +110,7 @@ export default function PRBoard() {
           <motion.div variants={fadeUp} className="text-center py-20">
             <Trophy size={40} className="text-gray-600 mx-auto mb-3" />
             <p className="text-gray-500">
-              {prs.length === 0 ? 'Aún no tenés records. Registrá resultados en tus ejercicios.' : 'No se encontraron ejercicios'}
+              {prs.length === 0 ? 'Aún no tienes records. Registra resultados en tus ejercicios.' : 'No se encontraron ejercicios'}
             </p>
           </motion.div>
         ) : (

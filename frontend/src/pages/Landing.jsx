@@ -176,7 +176,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">Planes</h2>
-            <p className="text-gray-400 max-w-xl mx-auto">Elegí el plan que mejor se adapte a tus necesidades.</p>
+            <p className="text-gray-400 max-w-xl mx-auto">Elige el plan que mejor se adapte a tus necesidades.</p>
           </div>
           <div className="max-w-md mx-auto">
             <div className="bg-gradient-to-br from-gym-400/10 to-orange-500/10 border border-gym-400/30 rounded-2xl p-8 relative">
@@ -276,7 +276,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="bg-gradient-to-br from-gym-400/10 to-orange-500/10 border border-gym-400/20 rounded-3xl p-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
-              ¿Sos entrenador personal?
+              ¿Eres entrenador personal?
             </h2>
             <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
               Ten tu propia plataforma para gestionar todos tus clientes. Rutinas, dietas, evolución con fotos y más.

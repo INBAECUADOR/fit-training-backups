@@ -160,7 +160,7 @@ export default function CalorieCalculator() {
               <Utensils size={24} className="text-gym-300" />
               Calculadora de Calorías
             </h1>
-            <p className="text-gray-400 text-sm mt-1">Estimá las calorías de tus comidas</p>
+            <p className="text-gray-400 text-sm mt-1">Calcula las calorías de tus comidas</p>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export default function CalorieCalculator() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Buscá un alimento (ej: pollo, arroz, aguacate)..."
+                  placeholder="Busca un alimento (ej: pollo, arroz, aguacate)..."
                   className="w-full bg-gym-700 border border-gym-600 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-gym-400 focus:ring-1 focus:ring-gym-400/30 transition-all text-sm"
                 />
                 {searching && <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gym-300 animate-spin" />}

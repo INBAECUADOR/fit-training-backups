@@ -125,7 +125,7 @@ export default function Diet() {
                   onChange={e => updateMeal(selectedDay, mt.key, e.target.value)}
                   className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-200 focus:ring-1 focus:ring-gym-200/30 transition-all resize-none overflow-hidden"
                   rows={1}
-                  placeholder="Describí tu comida..."
+                  placeholder="Describe tu comida..."
                 />
               </div>
             ))}

@@ -32,6 +32,7 @@ const AI_EXPERIENCE = ['principiante', 'intermedio', 'avanzado']
 const AI_GENDERS = ['masculino', 'femenino']
 const AI_EQUIPMENT = ['gimnasio completo', 'gimnasio básico', 'casa con mancuernas', 'casa sin equipamiento']
 const AI_MEAL_LABELS = { breakfast: 'Desayuno', morning_snack: 'Snack Mañana', lunch: 'Almuerzo', afternoon_snack: 'Snack Tarde', dinner: 'Cena' }
+const MEAL_LABELS = AI_MEAL_LABELS
 
 const MUSCLE_GROUPS = [
   { en: 'pectorals', es: 'Pecho' },
@@ -64,7 +65,7 @@ const exerciseImgSrc = (gifUrl) => {
 export default function Admin() {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const [tab, setTab] = useState('exercises')
+  const [tab, setTab] = useState('users')
 
   // --- User selector ---
   const [users, setUsers] = useState([])
@@ -121,8 +122,6 @@ export default function Admin() {
   useEffect(() => {
     adminGetUsers().then(list => {
       setUsers(list)
-      const firstUser = list.find(u => u.role !== 'admin') || list[0]
-      if (firstUser) setSelectedUserId(firstUser.id)
     }).catch(() => showToast('Error al cargar usuarios', 'error'))
   }, [])
 
@@ -350,7 +349,7 @@ export default function Admin() {
 
   const handleAiGenerate = async () => {
     if (!aiForm.age || !aiForm.trainingDays || !aiForm.mealsPerDay) {
-      setAiError('Completá al menos edad, días de entrenamiento y comidas al día')
+      setAiError('Completa al menos edad, días de entrenamiento y comidas al día')
       return
     }
     setAiGenerating(true)
@@ -368,7 +367,7 @@ export default function Admin() {
   }
 
   const handleAiApprove = async () => {
-    if (!aiAssignUser) { setAiError('Seleccioná un usuario para asignar el plan'); return }
+    if (!aiAssignUser) { setAiError('Selecciona un usuario para asignar el plan'); return }
     setAiSaving(true)
     setAiError('')
     setAiSuccess('')
@@ -407,22 +406,27 @@ export default function Admin() {
         {/* User selector */}
         <div className="mb-4 flex items-center gap-3 bg-gym-800 p-3 rounded-xl">
           <label className="font-medium text-gray-300 text-sm whitespace-nowrap">Usuario:</label>
-          <select
-            className="flex-1 border border-gym-700 rounded-lg px-3 py-2 bg-gym-900 text-white text-sm"
-            value={selectedUserId || ''}
-            onChange={e => setSelectedUserId(parseInt(e.target.value))}
-          >
-            {users.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.role === 'admin' ? 'Admin' : u.name} ({u.document_id}){u.role === 'admin' ? ' 👑' : ''}
-              </option>
-            ))}
-            {users.length === 0 && <option value="">Cargando...</option>}
-          </select>
+            <select
+              className="flex-1 border border-gym-700 rounded-lg px-3 py-2 bg-gym-900 text-white text-sm"
+              value={selectedUserId || ''}
+              onChange={e => setSelectedUserId(parseInt(e.target.value) || null)}
+            >
+              <option value="">-- Seleccionar usuario --</option>
+              {users.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.role === 'admin' ? 'Admin' : u.name} ({u.document_id}){u.role === 'admin' ? ' 👑' : ''}
+                </option>
+              ))}
+            </select>
         </div>
 
         <h1 className="text-3xl font-extrabold text-white mb-6">
-          {users.find(u => u.id === selectedUserId)?.role === 'admin' ? 'Admin' : (users.find(u => u.id === selectedUserId)?.name || 'Administración')}
+          Panel de Administración
+          {selectedUserId && users.find(u => u.id === selectedUserId)?.role !== 'admin' && (
+            <span className="text-base font-normal text-gym-300 ml-3">
+              → {users.find(u => u.id === selectedUserId)?.name}
+            </span>
+          )}
         </h1>
 
         {/* Tabs */}
@@ -688,7 +692,7 @@ export default function Admin() {
                   <label className="block text-sm font-bold text-gym-200 mb-2">{mt.label}</label>
                   <textarea value={meals[dietDay]?.[mt.key] || ''} onChange={e => updateMeal(dietDay, mt.key, e.target.value)}
                     className="w-full px-4 py-3 bg-gym-900 border border-gym-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gym-200 transition resize-none"
-                    rows={3} placeholder="Describí tu comida..." />
+                    rows={3} placeholder="Describe tu comida..." />
                 </div>
               ))}
             </div>
@@ -700,7 +704,7 @@ export default function Admin() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-gray-400 text-sm">Registrá y seguí las medidas corporales</p>
+                <p className="text-gray-400 text-sm">Registra y sigue las medidas corporales</p>
                 {measurements.length > 1 && (
                   <p className="text-xs text-gym-300 mt-1">
                     Última: {measurements[0].date?.slice(0,10)} · Anterior: {measurements[1].date?.slice(0,10)} · Diferencia: {Math.abs(new Date(measurements[0].date) - new Date(measurements[1].date)) / (1000*60*60*24)} días
@@ -1079,7 +1083,7 @@ export default function Admin() {
               </div>
               <div className="flex gap-2 mt-3">
                 <input type="password" value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)}
-                  placeholder={apiKeyConfigured ? 'Escribí nueva key para reemplazar...' : 'Ingresá la API key de OpenRouter...'}
+                  placeholder={apiKeyConfigured ? 'Escribe nueva key para reemplazar...' : 'Ingresa la API key de OpenRouter...'}
                   className="flex-1 px-3 py-2 bg-gym-900 border border-gym-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gym-400" />
                 <button onClick={async () => {
                   if (!apiKeyInput.trim()) return
@@ -1206,7 +1210,7 @@ export default function Admin() {
                 {!aiResult && !aiGenerating && !aiError && (
                   <div className="bg-gym-800/50 border border-gym-700/50 rounded-2xl p-10 text-center">
                     <Bot size={48} className="text-gym-700 mx-auto mb-4" />
-                    <p className="text-gray-500">Completá los datos del cliente y generá el plan</p>
+                    <p className="text-gray-500">Completa los datos del cliente y genera el plan</p>
                   </div>
                 )}
 
@@ -1446,7 +1450,7 @@ export default function Admin() {
               <p className="text-gray-400 text-sm">
                 {quotes.length > 0
                   ? `${quotes.length} frases registradas — se muestran una por día a todos los usuarios`
-                  : 'Agregá frases motivacionales para tus clientes'}
+                  : 'Agrega frases motivacionales para tus clientes'}
               </p>
             </div>
 
